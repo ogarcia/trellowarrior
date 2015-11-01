@@ -58,3 +58,13 @@ You may now access protected resources using the access tokens above.
 ```
 
 Finaly you have access tokens to put in python vars.
+
+Set this UDAs in taskwarrior `.taskrc`:
+
+```
+# UDAs
+uda.trelloid.type=string
+uda.trelloid.label=Trello ID
+uda.trellolistname.type=string
+uda.trellolistname.label=Trello List Name
+```
