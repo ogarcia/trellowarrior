@@ -1,3 +1,21 @@
+Equivalencias:
+TASK                   | TRELLO
+----------------------------------------
+UDA: trelloid          | card_id (card.id)
+UDA: trellodescription | card_description (card.desc)
+UDA: trellolistname    | list_name
+project                | board_name
+description            | card_name (card.name)
+due                    | card_due (card.set_due())
+tags                   | card_labels
+
+Estados:
+Recien creada en task -> 'To Do' (a no ser que tenga trellolistname)
+Activa en Task -> 'Doing' (a no ser que tenga trellolistname)
+Done en Task -> 'Done' (independientemente del trellolistname)
+Blocked en Task -> Esto simplemente le mete la etiqueta blocked
+
+
 from trello import TrelloClient
 
 client = TrelloClient(api_key='XXXX',
