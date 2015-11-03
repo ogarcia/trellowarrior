@@ -7,7 +7,7 @@
 # Distributed under terms of the MIT license.
 
 from ConfigParser import RawConfigParser
-from tasklib.task import TaskWarrior
+from tasklib.task import TaskWarrior, Task
 from trello import TrelloClient
 
 def parse_config(config_file):
@@ -128,6 +128,18 @@ def create_trello_list(board_name, list_name):
     trello_board = get_trello_board(board_name)
     return trello_board.add_list(list_name)
 
+def get_trello_dic_cards(board_name):
+    """
+    Returns a dic of lists with a set of card objects in each element
+
+    :board_name: the board name
+    """
+    trello_lists = get_trello_lists(board_name)
+    trello_cards = {}
+    for trello_list in trello_lists:
+        trello_cards[trello_list.name] = trello_list.list_cards()
+    return trello_cards
+
 def upload_tw_task(tw_task, trello_list):
     """
     Upload all contents of task to list creating a new card and storing cardid
@@ -142,6 +154,31 @@ def upload_tw_task(tw_task, trello_list):
     tw_task['trelloid'] = new_trello_card.id
     tw_task.save()
 
+def download_trello_card(project_name, list_name, trello_card, task_warrior, doing_list_name, done_list_name):
+    """
+    Download all contens of trello card creating new Task Warrior task
+
+    :project_name: the name of project where the card is stored
+    :list_name: the name of list where the card is stored
+    :trello_card: a Trello Card object
+    :task_warrior: Task Warrior object
+    :doing_list_name: name of doing list to set task active
+    :done_list_name: name of done list to set task done
+    """
+    trello_card.fetch(False)
+    new_tw_task = Task(task_warrior)
+    new_tw_task['project'] = project_name
+    new_tw_task['description'] = trello_card.name
+    if trello_card.due_date:
+        new_tw_task['due'] = trello_card.due_date
+    new_tw_task['trelloid'] = trello_card.id
+    new_tw_task['trellolistname'] = list_name
+    new_tw_task.save()
+    if list_name == doing_list_name:
+        new_tw_task.start()
+    if list_name == done_list_name:
+        new_tw_task.done()
+
 def get_tw_project_tasks(project_name):
     """
     Fetch all tasks from a project
@@ -149,6 +186,22 @@ def get_tw_project_tasks(project_name):
     :project_name: the project name
     """
     return TaskWarrior(taskrc_location=taskwarrior_taskrc_location, data_location=taskwarrior_data_location).tasks.filter(project=project_name)
+
+def get_tw_task_by_trello_id(project_name, trello_id):
+    """
+    Get a task by Trello ID
+    Trello ID must be unique, if not this raise an error
+
+    :project_name: the project name
+    :trello_id: Trello card ID
+    """
+    tw_tasks = TaskWarrior(taskrc_location=taskwarrior_taskrc_location, data_location=taskwarrior_data_location).tasks.filter(trelloid=trello_id)
+    if len(tw_tasks) == 0:
+        return None
+    elif len(tw_tasks) == 1:
+        return tw_tasks[0]
+    else:
+        raise ValueError('Duplicated Trello ID {0} in Taskwarrior tasks. Trello IDs must be unique, please fix it before sync.'.format(trello_id))
 
 def upload_new_tw_tasks(project_name, board_name, todo_list_name, doing_list_name, done_list_name):
     """
@@ -180,16 +233,41 @@ def upload_new_tw_tasks(project_name, board_name, todo_list_name, doing_list_nam
                     tw_task['trellolistname'] = todo_list_name
                     tw_task.save()
 
+def sync_trello_tw(project_name, board_name, todo_list_name, doing_list_name, done_list_name):
+    """
+    Download from Trello all cards and sync with TaskWarrior tasks
+
+    :project_name: the project name
+    :board_name: the name of Trello board
+    :todo_list_name: name of list for todo taks
+    :doing_list_name: name of list for active tasks
+    :done_list_name: name of list for done tasks
+    """
+    trello_dic_cards = get_trello_dic_cards(board_name)
+    task_warrior = TaskWarrior(taskrc_location=taskwarrior_taskrc_location, data_location=taskwarrior_data_location)
+    for list_name in trello_dic_cards:
+        for trello_card in trello_dic_cards[list_name]:
+            print (trello_card.id)
+            if get_tw_task_by_trello_id(project_name, trello_card.id):
+                #TODO: Do sync
+                print ('Do Sync')
+            else:
+                download_trello_card(project_name, list_name, trello_card, task_warrior, doing_list_name, done_list_name)
+
 def main():
     for project in sync_projects:
-        upload_new_tw_tasks(project['tw_project_name'],
-                            project['trello_board_name'],
-                            project['trello_todo_list'],
-                            project['trello_doing_list'],
-                            project['trello_done_list'])
-        #print (get_trello_board_id(project))
-        #print (get_trello_list(project, 'Movida'))
-    #    upload_new_tw_tasks(project)
+        #get_tw_task_by_trello_id(project['tw_project_name'], 'JUR')
+        #print(get_trello_cards(project['trello_board_name']))
+        sync_trello_tw(project['tw_project_name'],
+                       project['trello_board_name'],
+                       project['trello_todo_list'],
+                       project['trello_doing_list'],
+                       project['trello_done_list'])
+        #upload_new_tw_tasks(project['tw_project_name'],
+        #                    project['trello_board_name'],
+        #                    project['trello_todo_list'],
+        #                    project['trello_doing_list'],
+        #                    project['trello_done_list'])
 
 if __name__ == "__main__":
     if parse_config('trellowarrior.conf'):
