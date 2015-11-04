@@ -264,9 +264,11 @@ def sync_trello_tw(project_name, board_name, todo_list_name, doing_list_name, do
             # Fech all data from card
             trello_card.fetch(False)
             trello_cards_ids.append(trello_card.id)
-            if get_tw_task_by_trello_id(trello_card.id):
+            tw_task = get_tw_task_by_trello_id(trello_card.id)
+            if tw_task:
                 #TODO: Do sync
                 print ('Do Sync')
+                sync_task_card(tw_task, trello_card, list_name, todo_list_name, doing_list_name, done_list_name)
             else:
                 # Download new Trello cards that not present in Task Warrior
                 download_trello_card(project_name, list_name, trello_card, task_warrior, doing_list_name, done_list_name)
@@ -282,6 +284,21 @@ def sync_trello_tw(project_name, board_name, todo_list_name, doing_list_name, do
         task_to_delete['trelloid'] = None
         task_to_delete.save()
         task_to_delete.delete()
+
+def sync_task_card(tw_task, trello_card, list_name, todo_list_name, doing_list_name, done_list_name):
+    """
+    Sync existing Trello Card with existing Task Warrior task
+
+    :tw_task: the Task Warrior task object
+    :trello_card: the Trello card object
+    :list_name: the name of list where the card is stored
+    :todo_list_name: name of list for todo taks
+    :doing_list_name: name of list for active tasks
+    :done_list_name: name of list for done tasks
+    """
+    if tw_task['modified']:
+    if tw_task['description'] =! trello_card.name:
+        print ('Change!')
 
 def main():
     for project in sync_projects:
