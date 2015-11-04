@@ -220,7 +220,7 @@ def upload_new_tw_tasks(project_name, board_name, todo_list_name, doing_list_nam
     task_warrior = TaskWarrior(taskrc_location=taskwarrior_taskrc_location, data_location=taskwarrior_data_location)
     tw_pending_tasks   = task_warrior.tasks.pending().filter(project=project_name, trelloid=None)
     tw_completed_tasks = task_warrior.tasks.completed().filter(project=project_name, trelloid=None)
-    trello_lists = get_trello_lists(board_name)
+    #trello_lists = get_trello_lists(board_name)
     for tw_pending_task in tw_pending_tasks:
         if tw_pending_task.active:
             upload_tw_task(tw_pending_task, get_trello_list(board_name, trello_lists, doing_list_name))
@@ -296,17 +296,50 @@ def sync_task_card(tw_task, trello_card, list_name, todo_list_name, doing_list_n
     :doing_list_name: name of list for active tasks
     :done_list_name: name of list for done tasks
     """
-    if tw_task['modified']:
-    if tw_task['description'] =! trello_card.name:
-        print ('Change!')
+    tw_task_modified = False
+    # Task description - Trello card name
+    if tw_task['description'] != trello_card.name:
+        if tw_task['modified'] > trello_card.date_last_activity:
+            trello_card.set_name(tw_task['description'])
+        else:
+            tw_task['description'] = trello_card.name
+            tw_task_modified = True
+    # Task due - Trello due
+    if tw_task['due']:
+        if trello_card.due_date:
+            if tw_task['modified'] > trello_card.date_last_activity:
+                trello_card.set_due(tw_task['due'])
+            else:
+                tw_task['due'] = trello_card.due_date
+                tw_task_modified = True
+        else:
+            trello_card.set_due(tw_task['due'])
+    else:
+        if trello_card.due_date:
+            tw_task['due'] = trello_card.due_date
+            tw_task_modified = True
+    # Task List Name / Status - Trello List name
+    #if tw_task['trellolistname'] != list_name:
+    #    if tw_task['modified'] > trello_card.date_last_activity:
+    #        trello_card.set_name(tw_task['description'])
+    #    else:
+    #        tw_task['trellolistname'] = list_name
+    #        tw_task_modified = True
+    # Save Task warrior changes (if any)
+    if tw_task_modified:
+        tw_task.save()
 
 def main():
     for project in sync_projects:
+        # Get all Trello lists
+        trello_lists = get_trello_lists(project['trello_board_name'])
+        # Do sync Trello - Task Warrior
         sync_trello_tw(project['tw_project_name'],
                        project['trello_board_name'],
                        project['trello_todo_list'],
                        project['trello_doing_list'],
                        project['trello_done_list'])
+        # Upload new Task Warrior tasks
         upload_new_tw_tasks(project['tw_project_name'],
                             project['trello_board_name'],
                             project['trello_todo_list'],
@@ -314,5 +347,5 @@ def main():
                             project['trello_done_list'])
 
 if __name__ == "__main__":
-    if parse_config('trellowarrior.conf'):
+    if parse_config('local_trellowarrior.conf'):
         main()
