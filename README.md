@@ -63,7 +63,7 @@ with your data).
 ```sh
 export TRELLO_API_KEY="your_api_key"
 export TRELLO_API_SECRET="your_api_secret"
-export TRELLO_NAME="trellowarrior"
+export TRELLO_NAME="TrelloWarrior"
 export TRELLO_EXPIRATION="30days"
 ```
 
