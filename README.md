@@ -144,6 +144,16 @@ equivalence betwen Taskwarrior and Trello.
 * `trello_doing_list` Optional. The name of Trello list for active tasks. Default: `Doing`
 * `trello_done_list` Optional. The name of Trello list for done taks. Default: `Done`
 
+## Equivalences
+
+| Taskwarrior         | Trello        |
+|---------------------|---------------|
+| UDA: trelloid       | Card ID       |
+| UDA: trellolistname | List Name     |
+| Project             | Board Name    |
+| Description         | Card Name     |
+| Due                 | Card Due Date |
+
 ## Know limitations
 
 The main objetive of TaskWarrior is be simple so it **doesn't manage

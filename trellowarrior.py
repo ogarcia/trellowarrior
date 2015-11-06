@@ -406,5 +406,5 @@ def main():
                             project['trello_done_list'])
 
 if __name__ == "__main__":
-    if parse_config('trellowarrior.conf'):
+    if parse_config('conf/trellowarrior.conf'):
         main()
