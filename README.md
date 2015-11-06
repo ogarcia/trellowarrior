@@ -32,9 +32,10 @@ the Card/Task is stored.
 
 #### Prepare environ
 
-For run TrelloWarrior you need to install [tasklib][1] and [py-trello][2].
-TrelloWarrior uses this python helpers to comunicate with Taskwarrior and
-Trello.
+For run TrelloWarrior you need to install
+[tasklib](https://github.com/robgolding63/tasklib) and
+[py-trello](https://github.com/sarumont/py-trello). TrelloWarrior uses this
+python helpers to comunicate with Taskwarrior and Trello.
 
 You can use you package system to install it, but the easy form is use
 a Python 2.7 Virtualenv.
@@ -48,9 +49,6 @@ pip install py-trello
 
 Note that in several distributions the Virtualenv executable is called
 simply `virtualenv` instead `virtualenv2`.
-
-[1](https://github.com/robgolding63/tasklib)
-[2](https://github.com/sarumont/py-trello)
 
 #### Get the keys
 
@@ -114,3 +112,48 @@ You may now access protected resources using the access tokens above.
 
 Finaly you have access tokens to put in TrelloWarrior config file.
 
+## Configuration
+
+The TrelloWarrior config is very easy. There is a `trellowarrior.conf`
+sample file that you can modify to set with your data.
+
+### DEFAULT Section
+
+In DEFAULT section is mandatory set you Trello API key and token and, at
+least, one sync proyect. The sync proyect corresponds with the next sections
+that define the Taskwarrior project and Trello board equivalence.
+
+* `taskwarrior_taskrc_location` Optional. Define where is located your *taskrc* file. Default: `~/.taskrc`
+* `taskwarrior_data_location` Optional. Define where is located your *task* data dir. Default: `~/.task`
+
+* `trello_api_key` MANDATORY. Your Trello Api Key.
+* `trello_api_secret` MANDATORY. Your Trello Api Secret.
+* `trello_token` MANDATORY. Your Trello Token.
+* `trello_token_secret` MANDATORY. Your Trello Token Secret.
+
+* `sync_projects` MANDATORY. Define what sections are loaded, separated by spaces.
+
+### Project/Board Sections
+
+The Project/Board sections are called from `sync_projects` and define the
+equivalence betwen Taskwarrior and Trello.
+
+* `tw_project_name` MANDATORY. The name of project in Taskwarrior.
+* `trello_board_name` MANDATORY. The name of Trello Board.
+* `trello_todo_list` Optional. The name of Trello list where new pending tasks are stored. Default: `To Do`
+* `trello_doing_list` Optional. The name of Trello list for active tasks. Default: `Doing`
+* `trello_done_list` Optional. The name of Trello list for done taks. Default: `Done`
+
+## Know limitations
+
+The main objetive of TaskWarrior is be simple so it **doesn't manage
+colisions**. The sync strategy is **last modified wins**, this means that if
+you do a modification in Trello and later a modification in Taskwarrior,
+TrelloWarrior does the sync and maintain the Taskwarrior data cause it is
+the last touched.
+
+You can have infinite lists in your Trello, but all of them are considered
+as *pending*. You only can have one *doing* list and one *done* list, but
+this lists can be configured.
+
+For now, only syncs *Title/Description*, *Due dates* and *Status*.
