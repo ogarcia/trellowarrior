@@ -178,12 +178,12 @@ def download_trello_card(project_name, list_name, trello_card, task_warrior, doi
     :done_list_name: name of done list to set task done
     """
     new_tw_task = Task(task_warrior)
-    new_tw_task['project'] = project_name
-    new_tw_task['description'] = trello_card.name
+    new_tw_task['project'] = project_name.decode('utf-8')
+    new_tw_task['description'] = trello_card.name.decode('utf-8')
     if trello_card.due_date:
         new_tw_task['due'] = trello_card.due_date
     new_tw_task['trelloid'] = trello_card.id
-    new_tw_task['trellolistname'] = list_name
+    new_tw_task['trellolistname'] = list_name.decode('utf-8')
     new_tw_task.save()
     if list_name == doing_list_name:
         new_tw_task.start()
@@ -298,11 +298,11 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
     """
     tw_task_modified = False
     # Task description - Trello card name
-    if tw_task['description'] != trello_card.name:
+    if tw_task['description'] != trello_card.name.decode('utf-8'):
         if tw_task['modified'] > trello_card.date_last_activity:
             trello_card.set_name(tw_task['description'])
         else:
-            tw_task['description'] = trello_card.name
+            tw_task['description'] = trello_card.name.decode('utf-8')
             tw_task_modified = True
     # Task due - Trello due
     if tw_task['due']:
