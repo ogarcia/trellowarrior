@@ -23,10 +23,12 @@ uda.trellolistname.label=Trello List Name
 ```
 
 The first UDA `trelloid` is used to store the Trello Card ID and establish
-an equivalence between Trello Cards and Taskwarrior Tasks.
+an equivalence between Trello Cards and Taskwarrior Tasks. Note that you
+never, never, never, never, (period), should edit this field.
 
 The second UDA `trellolistname` is used to determine the Trello List where
-the Card/Task is stored.
+the Card/Task is stored. You can edit this field without problems to move
+task of list.
 
 ### For TrelloWarrior
 
