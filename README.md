@@ -2,7 +2,7 @@
 
 Tool to sync Taskwarrior projects with Trello boards.
 
-## Requeriments
+## Requirements
 
 ### In Taskwarrior
 
@@ -28,19 +28,19 @@ never, never, never, never, (period), should edit this field.
 
 The second UDA `trellolistname` is used to determine the Trello List where
 the Card/Task is stored. You can edit this field without problems to move
-task of list.
+the task to another list.
 
 ### For TrelloWarrior
 
-#### Prepare environ
+#### Prepare the environment
 
 For run TrelloWarrior you need to install
 [tasklib](https://github.com/robgolding63/tasklib) and
-[py-trello](https://github.com/sarumont/py-trello). TrelloWarrior uses this
-python helpers to comunicate with Taskwarrior and Trello.
+[py-trello](https://github.com/sarumont/py-trello). TrelloWarrior uses these
+Python helpers to comunicate with Taskwarrior and Trello.
 
-You can use you package system to install it, but the easy form is use
-a Python 2.7 Virtualenv.
+You can use your package system to install it, but the easy way is to use
+a Python 2.7 virtualenv:
 
 ```sh
 virtualenv2 trw
@@ -72,7 +72,8 @@ export TRELLO_EXPIRATION="30days"
 Note: You can set the `TRELLO_EXPIRATION` to `1hour`, `1day`, `30days`,
 `never`. We recomend use `30days` for tests and `never` for daily use.
 
-Run now the trello util into Virtualenv to get token and token secret.
+Now run the Trello util script in the Virtualenv to get the token and token
+secret.
 
 ```sh
 python trw/lib/python2.7/site-packages/trello/util.py
@@ -121,12 +122,13 @@ sample file that you can modify to set with your data.
 
 ### DEFAULT Section
 
-In DEFAULT section is mandatory set you Trello API key and token and, at
-least, one sync proyect. The sync proyect corresponds with the next sections
+In the `DEFAULT` section, it is mandatory to set your Trello API key and
+token and, at least, one sync project.
+The sync project corresponds to the following sections
 that define the Taskwarrior project and Trello board equivalence.
 
-* `taskwarrior_taskrc_location` Optional. Define where is located your *taskrc* file. Default: `~/.taskrc`
-* `taskwarrior_data_location` Optional. Define where is located your *task* data dir. Default: `~/.task`
+* `taskwarrior_taskrc_location` Optional. Define where your *taskrc* file is located. Default: `~/.taskrc`
+* `taskwarrior_data_location` Optional. Define where your *task* data dir is located. Default: `~/.task`
 
 * `trello_api_key` MANDATORY. Your Trello Api Key.
 * `trello_api_secret` MANDATORY. Your Trello Api Secret.
@@ -138,7 +140,7 @@ that define the Taskwarrior project and Trello board equivalence.
 ### Project/Board Sections
 
 The Project/Board sections are called from `sync_projects` and define the
-equivalence betwen Taskwarrior and Trello.
+equivalence between Taskwarrior and Trello.
 
 * `tw_project_name` MANDATORY. The name of project in Taskwarrior.
 * `trello_board_name` MANDATORY. The name of Trello Board.
@@ -156,16 +158,16 @@ equivalence betwen Taskwarrior and Trello.
 | Description         | Card Name     |
 | Due                 | Card Due Date |
 
-## Know limitations
+## Known limitations
 
-The main objetive of TaskWarrior is be simple so it **doesn't manage
-colisions**. The sync strategy is **last modified wins**, this means that if
+The main objective of TaskWarrior is to be simple so it **doesn't manage
+collisions**. The sync strategy is **last modified wins**, this means that if
 you do a modification in Trello and later a modification in Taskwarrior,
-TrelloWarrior does the sync and maintain the Taskwarrior data cause it is
+TrelloWarrior does the sync and keeps the Taskwarrior data, because it is
 the last touched.
 
 You can have infinite lists in your Trello, but all of them are considered
 as *pending*. You only can have one *doing* list and one *done* list, but
-this lists can be configured.
+these lists can be configured.
 
 For now, only syncs *Title/Description*, *Due dates* and *Status*.
