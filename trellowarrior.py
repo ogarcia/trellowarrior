@@ -7,7 +7,8 @@
 # Distributed under terms of the MIT license.
 
 from ConfigParser import RawConfigParser
-from tasklib.task import TaskWarrior, Task
+from tasklib.task import Task
+from tasklib.backends import TaskWarrior
 from trello import TrelloClient
 
 def parse_config(config_file):
