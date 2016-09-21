@@ -117,7 +117,9 @@ def get_trello_list(board_name, trello_lists, list_name):
     for trello_list in trello_lists:
         if trello_list.name == list_name:
             return trello_list
-    return create_trello_list(board_name, list_name)
+    trello_list = create_trello_list(board_name, list_name)
+    trello_lists.append(trello_list) # mutate the list, eek!
+    return trello_list
 
 def create_trello_list(board_name, list_name):
     """
