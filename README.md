@@ -170,4 +170,7 @@ You can have infinite lists in your Trello, but all of them are considered
 as *pending*. You only can have one *doing* list and one *done* list, but
 these lists can be configured.
 
+If you have several boards with same name, TrelloWarrior always picks the
+first one.
+
 For now, only syncs *Title/Description*, *Due dates* and *Status*.

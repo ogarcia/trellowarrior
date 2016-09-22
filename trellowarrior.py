@@ -85,7 +85,7 @@ def get_trello_board(board_name):
     """
     trello_boards = get_trello_boards()
     for trello_board in trello_boards:
-        if trello_board.name == board_name:
+        if trello_board.name == board_name and not trello_board.closed:
             return trello_board
     return create_trello_board(board_name)
 
