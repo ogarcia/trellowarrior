@@ -6,7 +6,10 @@
 #
 # Distributed under terms of the MIT license.
 
-from ConfigParser import RawConfigParser
+try:
+    from configparser import RawConfigParser
+except ImportError:
+    from ConfigParser import RawConfigParser
 from tasklib.task import Task
 from tasklib.backends import TaskWarrior
 from trello import TrelloClient
@@ -324,21 +327,21 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
     # Task List Name / Status - Trello List name
     if tw_task['trellolistname'] == doing_list_name or tw_task['trellolistname'] == done_list_name:
         if tw_task.pending and not tw_task.active and tw_task['modified'] > trello_card.date_last_activity:
-            print ('Task %s kicked to To Do') % (tw_task['id'])
+            print('Task %s kicked to To Do' % tw_task['id'])
             trello_list = get_trello_list(board_name, trello_lists, todo_list_name)
             trello_card.change_list(trello_list.id)
             tw_task['trellolistname'] = todo_list_name
             list_name = todo_list_name
             tw_task_modified = True
     if tw_task['trellolistname'] != doing_list_name and tw_task.active and tw_task['modified'] > trello_card.date_last_activity:
-        print ('Task %s kicked to Doing') % (tw_task['id'])
+        print('Task %s kicked to Doing' % tw_task['id'])
         trello_list = get_trello_list(board_name, trello_lists, doing_list_name)
         trello_card.change_list(trello_list.id)
         tw_task['trellolistname'] = doing_list_name
         list_name = doing_list_name
         tw_task_modified = True
     if tw_task['trellolistname'] != done_list_name and tw_task.completed and tw_task['modified'] > trello_card.date_last_activity:
-        print ('Task %s kicked to Done') % (tw_task['id'])
+        print('Task %s kicked to Done' % tw_task['id'])
         trello_list = get_trello_list(board_name, trello_lists, done_list_name)
         trello_card.change_list(trello_list.id)
         tw_task['trellolistname'] = done_list_name
@@ -346,13 +349,13 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
         tw_task_modified = True
     if tw_task['trellolistname'] != list_name:
         if tw_task['modified'] > trello_card.date_last_activity:
-            print ('Task %s kicked to Trello list %s') % (tw_task['id'], tw_task['trellolistname'])
+            print('Task %s kicked to Trello list %s' % (tw_task['id'], tw_task['trellolistname']))
             trello_list = get_trello_list(board_name, trello_lists, tw_task['trellolistname'])
             trello_card.change_list(trello_list.id)
         else:
             tw_task['trellolistname'] = list_name
             if list_name == done_list_name:
-                print ('Task %s kicked to Done') % (tw_task['id'])
+                print('Task %s kicked to Done' % tw_task['id'])
                 if tw_task.completed:
                     tw_task.save()
                     tw_task_modified = False # Set false cause just saved
@@ -361,7 +364,7 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
                     tw_task.done()
                     tw_task_modified = False
             elif list_name == doing_list_name:
-                print ('Task %s kicked to Doing') % (tw_task['id'])
+                print('Task %s kicked to Doing' % tw_task['id'])
                 if tw_task.completed:
                     tw_task['status'] = 'pending'
                     tw_task.save()
@@ -375,7 +378,7 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
                     tw_task.start()
                     tw_task_modified = False
             else:
-                print ('Task %s kicked to %s') % (tw_task['id'], list_name)
+                print('Task %s kicked to %s' % (tw_task['id'], list_name))
                 if tw_task.completed:
                     tw_task['status'] = 'pending'
                     tw_task_modified = True
