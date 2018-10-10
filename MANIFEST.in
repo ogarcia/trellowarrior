@@ -1,0 +1,8 @@
+# Include the license file
+include LICENSE
+
+# Include the requirements file
+include requirements.txt
+
+# Include the sample config file
+include trellowarrior.conf
