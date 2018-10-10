@@ -14,6 +14,8 @@ from tasklib.task import Task
 from tasklib.backends import TaskWarrior
 from trello import TrelloClient
 
+import argparse
+
 def parse_config(config_file):
     """
     Parse config file and return true if all ok
@@ -411,6 +413,12 @@ def main():
                             project['trello_doing_list'],
                             project['trello_done_list'])
 
+
 if __name__ == "__main__":
-    if parse_config('conf/trellowarrior.conf'):
+    parser = argparse.ArgumentParser(description="Bidirectional sync between trello and taskwarrior")
+    parser.add_argument('--conf-file', '-c', help='configuration file to use. Default to %(default)s', default='conf/trellowarrior.conf')
+
+    args = parser.parse_args()
+
+    if parse_config(args.conf_file):
         main()
