@@ -34,23 +34,32 @@ the task to another list.
 
 #### Prepare the environment
 
+##### The easy way
+
+Simply create a Python 2/3 virtualenv and install via pip:
+
+```
+virtualenv trw
+. trw/bin/activate
+pip install trellowarrior
+```
+
+##### By hand
+
 For run TrelloWarrior you need to install
 [tasklib](https://github.com/robgolding63/tasklib) and
 [py-trello](https://github.com/sarumont/py-trello). TrelloWarrior uses these
 Python helpers to comunicate with Taskwarrior and Trello.
 
-You can use your package system to install it, but the easy way is to use
-a Python 2.7 virtualenv:
+You can use your package system to install it, but the best way is to use
+a Python 2/3 virtualenv:
 
 ```sh
-virtualenv2 trw
+virtualenv trw
 . trw/bin/activate
 pip install tasklib
 pip install py-trello
 ```
-
-Note that in several distributions the Virtualenv executable is called
-simply `virtualenv` instead `virtualenv2`.
 
 #### Get the keys
 
@@ -119,6 +128,10 @@ Finaly you have access tokens to put in TrelloWarrior config file.
 
 The TrelloWarrior config is very easy. There is a `trellowarrior.conf`
 sample file that you can modify to set with your data.
+
+You can place the config file with `trellowarrior.py`, in your home as
+`~/.trellowarrior.conf` or `~/.config/trellowarrior/trellowarrior.conf`, or
+set the configuration file path with `-c` or `--config` argument.
 
 ### DEFAULT Section
 

@@ -1,8 +1,7 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2015 Óscar García Amor <ogarcia@connectical.com>
+# Copyright © 2015-2018 Óscar García Amor <ogarcia@connectical.com>
 #
 # Distributed under terms of the MIT license.
 
