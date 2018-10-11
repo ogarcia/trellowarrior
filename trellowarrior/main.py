@@ -394,11 +394,7 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
     if tw_task_modified:
         tw_task.save()
 
-def main():
-    parser = argparse.ArgumentParser(description="Bidirectional sync between trello and taskwarrior")
-    parser.add_argument('-c', '--config', metavar='value', help='custom configuration file path')
-    args = parser.parse_args()
-
+def sync(args):
     if args.config == None:
         config_files = [ './trellowarrior.conf',
                 os.path.join(os.path.expanduser('~'), '.trellowarrior.conf'),
@@ -428,3 +424,32 @@ def main():
                     project['trello_todo_list'],
                     project['trello_doing_list'],
                     project['trello_done_list'])
+
+def authenticate(args):
+    if os.path.exists(args.config):
+        print("File already exists, aborting")
+    from trello.util import create_oauth_token
+    oauth_token = create_oauth_token(expiration=args.expiration, key=args.api_key, secret=args.api_key_secret, name=args.name)
+    conf = RawConfigParser()
+    conf.set("DEFAULT", "trello_api_key", args.api_key)
+    conf.set("DEFAULT", "trello_api_secret", args.api_key_secret)
+    conf.set("DEFAULT", "trello_token", oauth_token['oauth_token'])
+    conf.set("DEFAULT", "trello_token_secret", oauth_token['oauth_token_secret'])
+    with open(args.config, 'w') as f:
+        conf.write(f)
+
+def main():
+    parser = argparse.ArgumentParser(description="Bidirectional sync between trello and taskwarrior")
+    parser.add_argument('-c', '--config', metavar='value', help='custom configuration file path')
+    subparsers = parser.add_subparsers()
+    sync_parser = subparsers.add_parser('sync')
+    sync_parser.set_defaults(func=sync)
+    auth_parser = subparsers.add_parser('authenticate')
+    auth_parser.add_argument("--api-key")
+    auth_parser.add_argument("--api-key-secret")
+    auth_parser.add_argument("--name")
+    auth_parser.add_argument("--expiration")
+    auth_parser.set_defaults(func=authenticate)
+    args = parser.parse_args()
+    args.func(args)
+
