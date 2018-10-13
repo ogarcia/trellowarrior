@@ -68,25 +68,15 @@ for it.
 
 First go to: https://trello.com/app-key to get your API Key and API Secret.
 
-In a bash compatible shell, run the following exports to config (configure
-with your data).
-
+Then call trellowarrior with the authenticate command :
 ```sh
-export TRELLO_API_KEY="your_api_key"
-export TRELLO_API_SECRET="your_api_secret"
-export TRELLO_NAME="TrelloWarrior"
-export TRELLO_EXPIRATION="30days"
+trellowarrior.py -c path/to/your/configfile authenticate --api-key your_api_key --api-key-secret your_api_secret --trello-name TrelloWarrior --expiration 30days
 ```
 
-Note: You can set the `TRELLO_EXPIRATION` to `1hour`, `1day`, `30days`,
+If the config file already exist, an error will be printed and the command will stop without doing anything.
+
+You can set the `TRELLO_EXPIRATION` to `1hour`, `1day`, `30days`,
 `never`. We recomend use `30days` for tests and `never` for daily use.
-
-Now run the Trello util script in the Virtualenv to get the token and token
-secret.
-
-```sh
-python trw/lib/python2.7/site-packages/trello/util.py
-```
 
 This return some like this.
 
@@ -122,7 +112,7 @@ Access Token:
 You may now access protected resources using the access tokens above.
 ```
 
-Finaly you have access tokens to put in TrelloWarrior config file.
+The config file is now initialized with the needed configuration variables.
 
 ## Configuration
 
@@ -133,6 +123,18 @@ You can place the config file with `trellowarrior.py`, in your home as
 `~/.trellowarrior.conf` or `~/.config/trellowarrior/trellowarrior.conf`, or
 set the configuration file path with `-c` or `--config` argument.
 
+To synchronize trello and task warrior, simply call trellowarrior with the sync command
+
+```sh 
+trellowarrior.py sync
+```
+
+You can also add a list of project(s) to synchronize :
+
+```sh 
+trellowarrior.py sync project1 project2
+```
+ 
 ### DEFAULT Section
 
 In the `DEFAULT` section, it is mandatory to set your Trello API key and
