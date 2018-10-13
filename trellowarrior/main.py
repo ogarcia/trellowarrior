@@ -12,6 +12,7 @@ except ImportError:
 from tasklib.task import Task
 from tasklib.backends import TaskWarrior
 from trello import TrelloClient
+from trello.util import create_oauth_token
 
 import argparse
 import os
@@ -395,6 +396,11 @@ def sync_task_card(tw_task, trello_card, board_name, trello_lists, list_name, to
         tw_task.save()
 
 def sync(args):
+    """
+    Function called by the sync subcomand to perform the sync between trello and taskwarrior
+
+    :args: command line arguments. Must contain a 'config' attribute
+    """
     if args.config == None:
         config_files = [ './trellowarrior.conf',
                 os.path.join(os.path.expanduser('~'), '.trellowarrior.conf'),
@@ -407,7 +413,11 @@ def sync(args):
         config_file = args.config
 
     if parse_config(config_file):
-        for project in sync_projects:
+        if args.projects:
+            projects_list = args.projects
+        else:
+            projects_list = sync_projects
+        for project in projects_list:
             # Get all Trello lists
             trello_lists = get_trello_lists(project['trello_board_name'])
             # Do sync Trello - Task Warrior
@@ -426,9 +436,14 @@ def sync(args):
                     project['trello_done_list'])
 
 def authenticate(args):
+    """
+    Function called by the authenticate subcommand to perform the initial authentication
+
+    :args: Command line arguments. Must contain the following attributes : 'config', 'api_key', 'api_key_secret', 'name'
+    """
     if os.path.exists(args.config):
         print("File already exists, aborting")
-    from trello.util import create_oauth_token
+
     oauth_token = create_oauth_token(expiration=args.expiration, key=args.api_key, secret=args.api_key_secret, name=args.name)
     conf = RawConfigParser()
     conf.set("DEFAULT", "trello_api_key", args.api_key)
@@ -442,13 +457,14 @@ def main():
     parser = argparse.ArgumentParser(description="Bidirectional sync between trello and taskwarrior")
     parser.add_argument('-c', '--config', metavar='value', help='custom configuration file path')
     subparsers = parser.add_subparsers()
-    sync_parser = subparsers.add_parser('sync')
+    sync_parser = subparsers.add_parser('sync', help="Synchronize trello and taskwarrior")
+    sync_parser.add_argument("projects", nargs='*', help="List of projects to synchronize. If empty will synchronize all projects listed in the configuration file")
     sync_parser.set_defaults(func=sync)
-    auth_parser = subparsers.add_parser('authenticate')
-    auth_parser.add_argument("--api-key")
-    auth_parser.add_argument("--api-key-secret")
-    auth_parser.add_argument("--name")
-    auth_parser.add_argument("--expiration")
+    auth_parser = subparsers.add_parser('authenticate', help="Setup the authentication against trello. Store the parameters in the file given with the '--config' argument. This file must not exist.")
+    auth_parser.add_argument("--api-key", help="Your api key. Get it from https://trello.com/app-key. If not set will be read from TRELLO_API_KEY environment variable.")
+    auth_parser.add_argument("--api-key-secret", help="Your api key secret. Get it from https://trello.com/app-key. If not set will be read from TRELLO_API_SECRET environment variable.")
+    auth_parser.add_argument("--name", help="Trello application name. If not set will be read from TRELLO_NAME environment variable.")
+    auth_parser.add_argument("--expiration", help="Can be set to 1hour, 1day, 30days, never. If not set will be read from TRELLO_EXPIRATION environment variable.")
     auth_parser.set_defaults(func=authenticate)
     args = parser.parse_args()
     args.func(args)
