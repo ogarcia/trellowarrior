@@ -43,6 +43,7 @@ def parse_config(config_file):
         if conf.has_section(sync_project):
             if conf.has_option(sync_project, 'tw_project_name') and conf.has_option(sync_project, 'trello_board_name'):
                 project = {}
+                project['project_name'] = sync_project
                 project['tw_project_name'] = conf.get(sync_project, 'tw_project_name')
                 project['trello_board_name'] = conf.get(sync_project, 'trello_board_name')
                 if conf.has_option(sync_project, 'trello_todo_list'):
@@ -413,27 +414,24 @@ def sync(args):
         config_file = args.config
 
     if parse_config(config_file):
-        if args.projects:
-            projects_list = args.projects
-        else:
-            projects_list = sync_projects
-        for project in projects_list:
-            # Get all Trello lists
-            trello_lists = get_trello_lists(project['trello_board_name'])
-            # Do sync Trello - Task Warrior
-            sync_trello_tw(trello_lists,
-                    project['tw_project_name'],
-                    project['trello_board_name'],
-                    project['trello_todo_list'],
-                    project['trello_doing_list'],
-                    project['trello_done_list'])
-            # Upload new Task Warrior tasks
-            upload_new_tw_tasks(trello_lists,
-                    project['tw_project_name'],
-                    project['trello_board_name'],
-                    project['trello_todo_list'],
-                    project['trello_doing_list'],
-                    project['trello_done_list'])
+        for project in sync_projects:
+            if len(args.projects) == 0 or project['project_name'] in args.projects:
+                # Get all Trello lists
+                trello_lists = get_trello_lists(project['trello_board_name'])
+                # Do sync Trello - Task Warrior
+                sync_trello_tw(trello_lists,
+                        project['tw_project_name'],
+                        project['trello_board_name'],
+                        project['trello_todo_list'],
+                        project['trello_doing_list'],
+                        project['trello_done_list'])
+                # Upload new Task Warrior tasks
+                upload_new_tw_tasks(trello_lists,
+                        project['tw_project_name'],
+                        project['trello_board_name'],
+                        project['trello_todo_list'],
+                        project['trello_doing_list'],
+                        project['trello_done_list'])
 
 def authenticate(args):
     """
