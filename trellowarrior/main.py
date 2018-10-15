@@ -403,9 +403,9 @@ def sync(args):
     :args: command line arguments. Must contain a 'config' attribute
     """
     if args.config == None:
-        config_files = [ './trellowarrior.conf',
+        config_files = [ os.path.join(os.path.expanduser('~'), '.config/trellowarrior/trellowarrior.conf'),
                 os.path.join(os.path.expanduser('~'), '.trellowarrior.conf'),
-                os.path.join(os.path.expanduser('~'), '.config/trellowarrior/trellowarrior.conf') ]
+                './trellowarrior.conf' ]
         # Try to load one of config default locations
         config_file = [file for file in config_files if os.access(file, os.R_OK)]
         if config_file == []:
