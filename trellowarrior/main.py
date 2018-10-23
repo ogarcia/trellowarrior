@@ -81,7 +81,7 @@ def parse_config(config_file):
 def get_trello_boards():
     """ Get all Trello boards """
     trello_client = TrelloClient(api_key=trello_api_key, api_secret=trello_api_secret, token=trello_token, token_secret=trello_token_secret)
-    return trello_client.list_boards()
+    return trello_client.list_boards(board_filter="open")
 
 def get_trello_board(board_name):
     """
