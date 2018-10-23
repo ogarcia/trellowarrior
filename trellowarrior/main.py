@@ -24,12 +24,16 @@ logger = logging.getLogger(__name__)
 
 class TwProject(object):
     def __init__(self, tw_project_name, trello_board_name, trello_todo_list='To Do', trello_doing_list='Doing',
-                 trello_done_list='Done'):
+                 trello_done_list='Done', tags_color=None):
         self.tw_project_name = tw_project_name
         self.trello_board_name = trello_board_name
         self.trello_todo_list = trello_todo_list
         self.trello_doing_list = trello_doing_list
         self.trello_done_list = trello_done_list
+        if tags_color is None:
+            tags_color = {}
+        self.tags_color = tags_color
+        self.trello_labels = {}
 
     def is_valid(self):
         return self.tw_project_name is not None and self.trello_board_name is not None
@@ -119,8 +123,16 @@ class TrelloWarrior(object):
                 trello_done_list = conf.get(sync_project, 'trello_done_list')
             else:
                 trello_done_list = 'Done'
+            if conf.has_option(sync_project, 'tags_color'):
+                tags = conf.get(sync_project, 'tags_color').split(',')
+                tags_color = {}
+                for tag in tags:
+                    name, color = tag.split('=')
+                    tags_color[name] = color
+            else:
+                tags_color = None
             self.all_projects[sync_project] = TwProject(tw_project_name, trello_board_name, trello_todo_list,
-                                                        trello_doing_list, trello_done_list)
+                                                        trello_doing_list, trello_done_list, tags_color)
         if conf.has_option('DEFAULT', 'trello_api_key'):
             self.trello_api_key = conf.get('DEFAULT', 'trello_api_key')
         if conf.has_option('DEFAULT', 'trello_api_secret'):
@@ -158,7 +170,11 @@ class TrelloWarrior(object):
             conf.set(project_name, 'trello_todo_list', project.trello_todo_list)
             conf.set(project_name, 'trello_doing_list', project.trello_doing_list)
             conf.set(project_name, 'trello_done_list', project.trello_done_list)
-
+            if project.tags_color:
+                tags_color = []
+                for tag, color in project.tags_color.items():
+                    tags_color.append('{}={}'.format(tag, color))
+                conf.set(project_name, 'tags_color', ','.join(tags_color))
         with open(self.config_file, 'w') as f:
             conf.write(f)
 
@@ -203,12 +219,22 @@ class TrelloWarrior(object):
             boards = self.trello_client.list_boards(board_filter="open")
             logger.debug("Boards fetched")
             self._trello_boards = {}
-            trello_sync = [p.trello_board_name for p_n, p in self.all_projects.items()
-                           if p_n in self.sync_projects]
+            trello_sync = {p.trello_board_name: p for p_n, p in self.all_projects.items()
+                           if p_n in self.sync_projects}
             for board in boards:
                 if board.name in trello_sync:
                     if board.name not in self._trello_boards:
                         self._trello_boards[board.name] = {'board': board, 'lists': None}
+                        existing_labels = {l.name: l for l in board.get_labels()}
+                        for label_name, label_color in trello_sync[board.name].tags_color.items():
+                            if label_name not in existing_labels:
+                                logger.debug('creating label : {} -- {}'.format(label_name, label_color))
+                                existing_labels[label_name] = board.add_label(label_name, label_color)
+                            elif existing_labels[label_name].color != label_color:
+                                board.delete_label(existing_labels[label_name].id)
+                                existing_labels[label_name] = board.add_label(label_name, label_color)
+                            trello_sync[board.name].trello_labels[label_name] = existing_labels[label_name]
+
         return self._trello_boards
 
     def get_trello_board(self, board_name):
@@ -279,7 +305,7 @@ class TrelloWarrior(object):
                   'Maybe you deleted it in Trello too.'.format(trello_card_id))
 
     @staticmethod
-    def upload_tw_task(tw_task, trello_list):
+    def upload_tw_task(tw_task, trello_list, project):
         """
         Upload all contents of task to list creating a new card and storing cardid
 
@@ -287,34 +313,39 @@ class TrelloWarrior(object):
         :trello_list: Trello list object
         """
         new_trello_card = trello_list.add_card(tw_task['description'])
+        for tag in  tw_task['tags']:
+            new_trello_card.add_label(project.trello_labels[tag])
         if tw_task['due']:
             new_trello_card.set_due(tw_task['due'])
         # Save the Trello Card ID into Task
         tw_task['trelloid'] = new_trello_card.id
         tw_task.save()
 
-    def download_trello_card(self, project_name, list_name, trello_card, doing_list_name, done_list_name):
+    def download_trello_card(self, project, list_name, trello_card):
         """
         Download all contens of trello card creating new Task Warrior task
 
-        :project_name: the name of project where the card is stored
+        :project: the project where the card is stored
         :list_name: the name of list where the card is stored
         :trello_card: a Trello Card object
-        :task_warrior: Task Warrior object
-        :doing_list_name: name of doing list to set task active
-        :done_list_name: name of done list to set task done
+        :type trello_card: Card
         """
         new_tw_task = Task(self.task_warrior)
-        new_tw_task['project'] = project_name
+        new_tw_task['project'] = project.tw_project_name
         new_tw_task['description'] = trello_card.name
         if trello_card.due_date:
             new_tw_task['due'] = trello_card.due_date
         new_tw_task['trelloid'] = trello_card.id
         new_tw_task['trellolistname'] = list_name
+        trello_labels = trello_card.labels
+        if trello_labels:
+            for label in trello_labels:
+                if label.name in project.trello_labels:
+                    new_tw_task['tags'].append(label.name)
         new_tw_task.save()
-        if list_name == doing_list_name:
+        if list_name == project.trello_doing_list:
             new_tw_task.start()
-        if list_name == done_list_name:
+        elif list_name == project.trello_done_list:
             new_tw_task.done()
 
     def get_tw_task_by_trello_id(self, trello_id):
@@ -348,19 +379,20 @@ class TrelloWarrior(object):
         done_list = self.get_trello_list(project.trello_board_name, project.trello_done_list)
         for tw_pending_task in tw_pending_tasks:
             if tw_pending_task.active:
-                self.upload_tw_task(tw_pending_task, doing_list)
+                self.upload_tw_task(tw_pending_task, doing_list, project)
                 tw_pending_task['trellolistname'] = project.trello_doing_list
                 tw_pending_task.save()
             else:
                 if tw_pending_task['trellolistname']:
-                    self.upload_tw_task(tw_pending_task, self.get_trello_list(project.trello_board_name,
-                                                                              tw_pending_task['trellolistname']))
+                    list_name = self.get_trello_list(project.trello_board_name,
+                                                             tw_pending_task['trellolistname'])
+                    self.upload_tw_task(tw_pending_task, list_name, project)
                 else:
-                    self.upload_tw_task(tw_pending_task, todo_list)
+                    self.upload_tw_task(tw_pending_task, todo_list, project)
                     tw_pending_task['trellolistname'] = project.trello_todo_list
                     tw_pending_task.save()
         for tw_completed_task in tw_completed_tasks:
-            self.upload_tw_task(tw_completed_task, done_list)
+            self.upload_tw_task(tw_completed_task, done_list, project)
             tw_completed_task['trellolistname'] = project.trello_done_list
             tw_completed_task.save()
 
@@ -388,12 +420,10 @@ class TrelloWarrior(object):
                 trello_cards_ids.add(trello_card.id)
                 tw_task = self.get_tw_task_by_trello_id(trello_card.id)
                 if tw_task:
-                    self.sync_task_card(tw_task, trello_card, project.trello_board_name, list_name,
-                                        project.trello_todo_list, project.trello_doing_list, project.trello_done_list)
+                    self.sync_task_card(tw_task, trello_card, project, list_name)
                 else:
                     # Download new Trello cards that not present in Task Warrior
-                    self.download_trello_card(project.tw_project_name, list_name, trello_card,
-                                              project.trello_doing_list, project.trello_done_list)
+                    self.download_trello_card(project, list_name, trello_card)
         # Compare Trello and TaskWarrior tasks for remove deleted Trello tasks in Task Warrior
         tw_pending_tasks_ids = set((task['trelloid'] for task in
                                     self.task_warrior.tasks.pending().filter(project=project.tw_project_name)))
@@ -408,74 +438,54 @@ class TrelloWarrior(object):
             task_to_delete.save()
             task_to_delete.delete()
 
-    def sync_task_card(self, tw_task, trello_card, board_name, list_name, todo_list_name,
-                       doing_list_name, done_list_name):
+    def sync_task_card(self, tw_task, trello_card, project, list_name):
         """
         Sync existing Trello Card with existing Task Warrior task
 
         :tw_task: the Task Warrior task object
         :trello_card: the Trello card object
-        :board_name: the name of Trello board
+        :project: the corresponding project object
         :list_name: the name of list where the card is stored
-        :todo_list_name: name of list for todo tasks
-        :doing_list_name: name of list for active tasks
-        :done_list_name: name of list for done tasks
         """
         tw_task_modified = False
-        # Task description - Trello card name
-        if tw_task['description'] != trello_card.name:
-            if tw_task['modified'] > trello_card.date_last_activity:
+        if tw_task['modified'] > trello_card.date_last_activity:  #  Trello card is older than local
+            # Task description - Trello card name
+            if tw_task['description'] != trello_card.name:
                 trello_card.set_name(tw_task['description'])
-            else:
+            # Task due - Trello due
+            if tw_task['due'] and tw_task['due'] != trello_card.due_date:
+                trello_card.set_due(tw_task['due'])
+            elif tw_task['due'] is None:
+                if trello_card.due_date:
+                    trello_card.remove_due()
+            # Task List Name / Status - Trello List name
+            new_list_name = list_name
+            if tw_task['trellolistname'] in [project.trello_doing_list, project.trello_done_list] and \
+                    tw_task.pending and not tw_task.active:
+                new_list_name = project.trello_todo_list
+            elif tw_task['trellolistname'] != project.trello_doing_list and tw_task.active:
+                new_list_name = project.trello_doing_list
+            elif tw_task['trellolistname'] != project.trello_done_list and tw_task.completed:
+                new_list_name = project.trello_done_list
+            elif tw_task['trellolistname'] != list_name:
+                new_list_name = tw_task['trellolistname']
+            if new_list_name != list_name:
+                tw_task_modified = self.move_task_to_list(project, trello_card, tw_task, new_list_name)
+        else:  # Trello card is newer than local
+            # Task description - Trello card name
+            if tw_task['description'] != trello_card.name:
                 tw_task['description'] = trello_card.name
                 tw_task_modified = True
-        # Task due - Trello due
-        if tw_task['due']:
-            if trello_card.due_date:
-                if tw_task['modified'] > trello_card.date_last_activity:
-                    trello_card.set_due(tw_task['due'])
-                else:
-                    tw_task['due'] = trello_card.due_date
-                    tw_task_modified = True
-            else:
-                trello_card.set_due(tw_task['due'])
-        else:
-            if trello_card.due_date:
+            # Task due - Trello due
+            if trello_card.due_date and (tw_task['due'] is None or tw_task['due'] != trello_card.due_date):
                 tw_task['due'] = trello_card.due_date
                 tw_task_modified = True
-        # Task List Name / Status - Trello List name
-        if tw_task['trellolistname'] == doing_list_name or tw_task['trellolistname'] == done_list_name:
-            if tw_task.pending and not tw_task.active and tw_task['modified'] > trello_card.date_last_activity:
-                logger.info('Task %s kicked to To Do' % tw_task['id'])
-                trello_list = self.get_trello_list(board_name, todo_list_name)
-                trello_card.change_list(trello_list.id)
-                tw_task['trellolistname'] = todo_list_name
-                list_name = todo_list_name
-                tw_task_modified = True
-        if tw_task['trellolistname'] != doing_list_name and tw_task.active and \
-                tw_task['modified'] > trello_card.date_last_activity:
-            logger.info('Task %s kicked to Doing' % tw_task['id'])
-            trello_list = self.get_trello_list(board_name, doing_list_name)
-            trello_card.change_list(trello_list.id)
-            tw_task['trellolistname'] = doing_list_name
-            list_name = doing_list_name
-            tw_task_modified = True
-        if tw_task['trellolistname'] != done_list_name and tw_task.completed and \
-                tw_task['modified'] > trello_card.date_last_activity:
-            logger.info('Task %s kicked to Done' % tw_task['id'])
-            trello_list = self.get_trello_list(board_name, done_list_name)
-            trello_card.change_list(trello_list.id)
-            tw_task['trellolistname'] = done_list_name
-            list_name = done_list_name
-            tw_task_modified = True
-        if tw_task['trellolistname'] != list_name:
-            if tw_task['modified'] > trello_card.date_last_activity:
-                logger.info('Task %s kicked to Trello list %s' % (tw_task['id'], tw_task['trellolistname']))
-                trello_list = self.get_trello_list(board_name, tw_task['trellolistname'])
-                trello_card.change_list(trello_list.id)
-            else:
+            elif not trello_card.due_date and tw_task['due']:
+                tw_task['due'] = None
+            if tw_task['trellolistname'] != list_name:
                 tw_task['trellolistname'] = list_name
-                if list_name == done_list_name:
+                tw_task_modified = True
+                if list_name == project.trello_done_list:
                     logger.info('Task %s kicked to Done' % tw_task['id'])
                     if tw_task.completed:
                         tw_task.save()
@@ -484,7 +494,7 @@ class TrelloWarrior(object):
                         tw_task.save()
                         tw_task.done()
                         tw_task_modified = False
-                elif list_name == doing_list_name:
+                elif list_name == project.trello_doing_list:
                     logger.info('Task %s kicked to Doing' % tw_task['id'])
                     if tw_task.completed:
                         tw_task['status'] = 'pending'
@@ -502,16 +512,22 @@ class TrelloWarrior(object):
                     logger.info('Task %s kicked to %s' % (tw_task['id'], list_name))
                     if tw_task.completed:
                         tw_task['status'] = 'pending'
-                        tw_task_modified = True
                     elif tw_task.active:
                         tw_task.save()
                         tw_task.stop()
                         tw_task_modified = False
-                    else:
-                        tw_task_modified = True
         # Save Task warrior changes (if any)
         if tw_task_modified:
             tw_task.save()
+
+    def move_task_to_list(self, project, trello_card, tw_task, list_name):
+        logger.info('Task %s kicked to %s' % (tw_task['id'], list_name))
+        trello_list = self.get_trello_list(project.trello_board_name, list_name)
+        trello_card.change_list(trello_list.id)
+        if tw_task['trellolistname'] != list_name:
+            tw_task['trellolistname'] = list_name
+            return True
+        return False
 
     def sync(self, projects=None):
         """
