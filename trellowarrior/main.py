@@ -314,7 +314,8 @@ class TrelloWarrior(object):
         """
         new_trello_card = trello_list.add_card(tw_task['description'])
         for tag in  tw_task['tags']:
-            new_trello_card.add_label(project.trello_labels[tag])
+            if tag in project.trello_labels:
+                new_trello_card.add_label(project.trello_labels[tag])
         if tw_task['due']:
             new_trello_card.set_due(tw_task['due'])
         # Save the Trello Card ID into Task
@@ -341,7 +342,7 @@ class TrelloWarrior(object):
         if trello_labels:
             for label in trello_labels:
                 if label.name in project.trello_labels:
-                    new_tw_task['tags'].append(label.name)
+                    new_tw_task['tags'].add(label.name)
         new_tw_task.save()
         if list_name == project.trello_doing_list:
             new_tw_task.start()
@@ -458,6 +459,17 @@ class TrelloWarrior(object):
             elif tw_task['due'] is None:
                 if trello_card.due_date:
                     trello_card.remove_due()
+            # Task tags - Trello labels
+            trello_labels = trello_card.labels
+            if trello_labels is None:
+                trello_labels = []
+            trello_labels_name = [label.name for label in trello_labels]
+            for label in trello_labels:
+                if label.name in project.trello_labels and label.name not in tw_task['tags']:
+                    trello_card.remove_label(label)
+            for tag in tw_task['tags']:
+                if tag in project.trello_labels and tag not in trello_labels_name:
+                    trello_card.add_label(project.trello_labels[tag])
             # Task List Name / Status - Trello List name
             new_list_name = list_name
             if tw_task['trellolistname'] in [project.trello_doing_list, project.trello_done_list] and \
@@ -482,6 +494,19 @@ class TrelloWarrior(object):
                 tw_task_modified = True
             elif not trello_card.due_date and tw_task['due']:
                 tw_task['due'] = None
+            # Task tags - Trello labels
+            trello_labels = trello_card.labels
+            if trello_labels is None:
+                trello_labels = []
+            trello_labels_name = [label.name for label in trello_labels]
+            for tag in tw_task['tags']:
+                if tag in project.trello_labels and tag not in trello_labels_name:
+                    tw_task['tags'].remove(tag)
+                    tw_task_modified = True
+            for label in trello_labels:
+                if label.name in project.trello_labels and label.name not in tw_task['tags']:
+                    tw_task['tags'].add(label.name)
+                    tw_task_modified = True
             if tw_task['trellolistname'] != list_name:
                 tw_task['trellolistname'] = list_name
                 tw_task_modified = True
@@ -575,7 +600,7 @@ class TrelloWarrior(object):
         self.write_config()
 
     def new_project(self, name, tw_project_name, trello_board_name, trello_todo_list='To Do', trello_doing_list='Doing',
-                    trello_done_list='Done', no_sync=False):
+                    trello_done_list='Done', no_sync=False, tags_color=None):
         """
         Add a new project to the config
 
@@ -587,7 +612,13 @@ class TrelloWarrior(object):
         :param trello_done_list: name of the done list in trello
         :param no_sync: Do not add the project to the list of projects to sync if set to true
         """
-        project = TwProject(tw_project_name, trello_board_name, trello_todo_list, trello_doing_list, trello_done_list)
+        tags_color_dict = {}
+        if tags_color is not None:
+            for tag in tags_color.split(','):
+                name, color = tag.split('=')
+                tags_color_dict[name] = color
+        project = TwProject(tw_project_name, trello_board_name, trello_todo_list, trello_doing_list, trello_done_list,
+                            tags_color_dict)
         self.all_projects[name] = project
         if not no_sync:
             self.sync_projects.append(name)
@@ -660,6 +691,7 @@ def main():
     new_parser.add_argument('--todo', help='Todo trello list name, default to %(default)s', default='To Do')
     new_parser.add_argument('--doing', help='Doing trello list name, default to %(default)s', default='Doing')
     new_parser.add_argument('--done', help='Todo trello list name, default to %(default)s', default='Done')
+    new_parser.add_argument('--tags-color', help='Mapping between tags and color labels "tags1=color1,tags2=color2"')
     new_parser.add_argument('--no-sync', help='Deactivate auto sync for this project '
                                               '(it will not be in the sync_project list)')
     new_parser.set_defaults(func=new_project)
