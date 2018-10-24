@@ -40,9 +40,9 @@ class TwProject(object):
 
 
 class TrelloWarrior(object):
-    CONFIG_FILES = [os.path.join(os.path.expanduser('~'), '.config/trellowarrior/trellowarrior.conf'),
+    CONFIG_FILES = ['./trellowarrior.conf',
                     os.path.join(os.path.expanduser('~'), '.trellowarrior.conf'),
-                    './trellowarrior.conf']
+                    os.path.join(os.path.expanduser('~'), '.config/trellowarrior/trellowarrior.conf')]
 
     def __init__(self, config_file=None):
         if config_file:
@@ -50,7 +50,7 @@ class TrelloWarrior(object):
         else:
             for file in TrelloWarrior.CONFIG_FILES:
                 if os.access(file, os.R_OK):
-                    self.config_file = file  # FIXME keep merging conf file ?
+                    self.config_file = file
                     break
             else:
                 raise SystemExit('No config file found.')
