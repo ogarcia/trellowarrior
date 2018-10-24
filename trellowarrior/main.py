@@ -406,9 +406,12 @@ def sync(args):
         config_files = [ os.path.join(os.path.expanduser('~'), '.config/trellowarrior/trellowarrior.conf'),
                 os.path.join(os.path.expanduser('~'), '.trellowarrior.conf'),
                 './trellowarrior.conf' ]
-        # Try to load one of config default locations
-        config_file = [file for file in config_files if os.access(file, os.R_OK)]
-        if config_file == []:
+        # Find highest priority conf file
+        config_file = None
+        for file in config_files:
+            if os.access(file, os.R_OK):
+                config_file = file
+        if config_file is None:
             raise SystemExit('No config file found.')
     else:
         config_file = args.config
