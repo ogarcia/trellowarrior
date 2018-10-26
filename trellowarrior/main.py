@@ -66,6 +66,7 @@ class TrelloWarrior(object):
         self._trello_client = None
         self._trello_boards = None
         self._task_warrior = None
+        self.delay_between_sync = None
         self.parse_config()
 
     def validate_config(self):
@@ -100,6 +101,8 @@ class TrelloWarrior(object):
         except Exception:
             logger.error("Error while parsing configuration file")
             return
+        if conf.has_option('DEFAULT', 'delay_between_sync'):
+            self.delay_between_sync = conf.getint('DEFAULT', 'delay_between_sync')
         if conf.has_option('DEFAULT', 'sync_projects'):
             self.sync_projects = conf.get('DEFAULT', 'sync_projects').split()
         for sync_project in conf.sections():
@@ -161,6 +164,8 @@ class TrelloWarrior(object):
         conf.set('DEFAULT', 'trello_app_name', self.trello_app_name)
         conf.set('DEFAULT', 'taskwarrior_data_location', self.taskwarrior_data_location)
         conf.set('DEFAULT', 'taskwarrior_taskrc_location', self.taskwarrior_taskrc_location)
+        if self.delay_between_sync:
+            conf.set('DEFAULT', 'delay_between_sync', self.delay_between_sync)
         if self.sync_projects:
             conf.set('DEFAULT', 'sync_projects', ' '.join(self.sync_projects))
         for project_name, project in self.all_projects.items():
@@ -637,13 +642,13 @@ def sync(args):
     else:
         projects = None
     tw.sync(projects)
-    seconds = args.delai_between_sync * 60
-    if seconds > 0:
+    if args.daemon:
         try:
+            minutes = tw.delay_between_sync or 60
             while True:
                 logger.info("Sync done. will wait {} minutes before next one "
-                            "(press ctrl-c to stop)".format(args.delai_between_sync))
-                sleep(seconds)
+                            "(press ctrl-c to stop)".format(minutes))
+                sleep(minutes * 60)
                 tw.invalid_trello_cache()
                 tw.sync(projects)
         except KeyboardInterrupt:
@@ -679,9 +684,9 @@ def main():
     sync_parser.add_argument("projects", nargs='*',
                              help="List of projects to synchronize. If empty will synchronize all projects listed in "
                                   "the configuration file")
-    sync_parser.add_argument("--delai-between-sync", '-d', metavar='N', default=0, type=int,
-                             help="Launch the sync process every N minutes. If set to 0 (default), perform one sync and"
-                                  " exit.")
+    sync_parser.add_argument("--daemon", '-d', action='store_true',
+                             help="Launch the sync process every N minutes. The default delay is 60 minutes. Can be"
+                                  " changed in the config file ([DEFAULT] section, 'delay_between_sync' option.")
     sync_parser.set_defaults(func=sync)
     new_parser = subparsers.add_parser('new', help="Add a new project to the config file,"
                                                     " override existing one if present")
