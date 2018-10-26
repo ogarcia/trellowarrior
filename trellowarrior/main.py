@@ -4,6 +4,7 @@
 # Copyright © 2015-2018 Óscar García Amor <ogarcia@connectical.com>
 #
 # Distributed under terms of the MIT license.
+import json
 from time import sleep
 
 try:
@@ -127,11 +128,10 @@ class TrelloWarrior(object):
             else:
                 trello_done_list = 'Done'
             if conf.has_option(sync_project, 'tags_color'):
-                tags = conf.get(sync_project, 'tags_color').split(',')
+                tags = json.loads(conf.get(sync_project, 'tags_color'))
                 tags_color = {}
                 for tag in tags:
-                    name, color = tag.split('=')
-                    tags_color[name] = color
+                    tags_color[tag['name']] = tag['color']
             else:
                 tags_color = None
             self.all_projects[sync_project] = TwProject(tw_project_name, trello_board_name, trello_todo_list,
@@ -176,10 +176,8 @@ class TrelloWarrior(object):
             conf.set(project_name, 'trello_doing_list', project.trello_doing_list)
             conf.set(project_name, 'trello_done_list', project.trello_done_list)
             if project.tags_color:
-                tags_color = []
-                for tag, color in project.tags_color.items():
-                    tags_color.append('{}={}'.format(tag, color))
-                conf.set(project_name, 'tags_color', ','.join(tags_color))
+                tags_color = [{"name": tag, "color": color} for tag, color in project.tags_color.items()]
+                conf.set(project_name, 'tags_color', json.dumps(tags_color))
         with open(self.config_file, 'w') as f:
             conf.write(f)
 
