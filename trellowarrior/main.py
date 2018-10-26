@@ -32,7 +32,7 @@ class TwProject(object):
         self.trello_doing_list = trello_doing_list
         self.trello_done_list = trello_done_list
         if tags_color is None:
-            tags_color = {}
+            tags_color = []
         self.tags_color = tags_color
         self.trello_labels = {}
 
@@ -81,7 +81,7 @@ class TrelloWarrior(object):
             res = False
         for project_name in self.sync_projects:
             project = self.all_projects.get(project_name)
-            if project is None :
+            if project is None:
                 logger.error("Project {} is not defined".format(project))
                 res = False
             elif not project.is_valid():
@@ -128,10 +128,7 @@ class TrelloWarrior(object):
             else:
                 trello_done_list = 'Done'
             if conf.has_option(sync_project, 'tags_color'):
-                tags = json.loads(conf.get(sync_project, 'tags_color'))
-                tags_color = {}
-                for tag in tags:
-                    tags_color[tag['name']] = tag['color']
+                tags_color = json.loads(conf.get(sync_project, 'tags_color'))
             else:
                 tags_color = None
             self.all_projects[sync_project] = TwProject(tw_project_name, trello_board_name, trello_todo_list,
@@ -176,8 +173,7 @@ class TrelloWarrior(object):
             conf.set(project_name, 'trello_doing_list', project.trello_doing_list)
             conf.set(project_name, 'trello_done_list', project.trello_done_list)
             if project.tags_color:
-                tags_color = [{"name": tag, "color": color} for tag, color in project.tags_color.items()]
-                conf.set(project_name, 'tags_color', json.dumps(tags_color))
+                conf.set(project_name, 'tags_color', json.dumps(project.tags_color))
         with open(self.config_file, 'w') as f:
             conf.write(f)
 
@@ -228,16 +224,15 @@ class TrelloWarrior(object):
                 if board.name in trello_sync:
                     if board.name not in self._trello_boards:
                         self._trello_boards[board.name] = {'board': board, 'lists': None}
-                        existing_labels = {l.name: l for l in board.get_labels()}
-                        for label_name, label_color in trello_sync[board.name].tags_color.items():
-                            if label_name not in existing_labels:
-                                logger.debug('creating label : {} -- {}'.format(label_name, label_color))
-                                existing_labels[label_name] = board.add_label(label_name, label_color)
-                            elif existing_labels[label_name].color != label_color:
-                                board.delete_label(existing_labels[label_name].id)
-                                existing_labels[label_name] = board.add_label(label_name, label_color)
-                            trello_sync[board.name].trello_labels[label_name] = existing_labels[label_name]
-
+                        existing_labels = {l.id: l for l in board.get_labels()}
+                        for tag in trello_sync[board.name].tags_color:
+                            if tag['name'] not in existing_labels:
+                                logger.debug('creating label : {} -- {}'.format(tag['name'], tag['color']))
+                                existing_labels[tag['name']] = board.add_label(tag['name'], tag['color'])
+                            elif existing_labels[tag['name']].color != tag['color']:
+                                board.delete_label(existing_labels[tag['name']].id)
+                                existing_labels[tag['name']] = board.add_label(tag['name'], tag['color'])
+                            trello_sync[board.name].trello_labels[tag['name']] = existing_labels[tag['name']]
         return self._trello_boards
 
     def get_trello_board(self, board_name):
