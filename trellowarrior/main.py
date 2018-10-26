@@ -446,7 +446,6 @@ class TrelloWarrior(object):
         :project: the corresponding project object
         :list_name: the name of list where the card is stored
         """
-        tw_task_modified = False
         if tw_task['modified'] > trello_card.date_last_activity:  #  Trello card is older than local
             # Task description - Trello card name
             if tw_task['description'] != trello_card.name:
@@ -480,16 +479,14 @@ class TrelloWarrior(object):
             elif tw_task['trellolistname'] != list_name:
                 new_list_name = tw_task['trellolistname']
             if new_list_name != list_name:
-                tw_task_modified = self.move_task_to_list(project, trello_card, tw_task, new_list_name)
+                self.move_task_to_list(project, trello_card, tw_task, new_list_name)
         else:  # Trello card is newer than local
             # Task description - Trello card name
             if tw_task['description'] != trello_card.name:
                 tw_task['description'] = trello_card.name
-                tw_task_modified = True
             # Task due - Trello due
             if trello_card.due_date and (tw_task['due'] is None or tw_task['due'] != trello_card.due_date):
                 tw_task['due'] = trello_card.due_date
-                tw_task_modified = True
             elif not trello_card.due_date and tw_task['due']:
                 tw_task['due'] = None
             # Task tags - Trello labels
@@ -500,37 +497,29 @@ class TrelloWarrior(object):
             for tag in tw_task['tags']:
                 if tag in project.trello_labels and tag not in trello_labels_name:
                     tw_task['tags'].remove(tag)
-                    tw_task_modified = True
             for label in trello_labels:
                 if label.name in project.trello_labels and label.name not in tw_task['tags']:
                     tw_task['tags'].add(label.name)
-                    tw_task_modified = True
             if tw_task['trellolistname'] != list_name:
                 tw_task['trellolistname'] = list_name
-                tw_task_modified = True
                 if list_name == project.trello_done_list:
                     logger.info('Task %s kicked to Done' % tw_task['id'])
                     if tw_task.completed:
                         tw_task.save()
-                        tw_task_modified = False  # Set false cause just saved
                     else:
                         tw_task.save()
                         tw_task.done()
-                        tw_task_modified = False
                 elif list_name == project.trello_doing_list:
                     logger.info('Task %s kicked to Doing' % tw_task['id'])
                     if tw_task.completed:
                         tw_task['status'] = 'pending'
                         tw_task.save()
                         tw_task.start()
-                        tw_task_modified = False
                     elif tw_task.active:
                         tw_task.save()
-                        tw_task_modified = False
                     else:
                         tw_task.save()
                         tw_task.start()
-                        tw_task_modified = False
                 else:
                     logger.info('Task %s kicked to %s' % (tw_task['id'], list_name))
                     if tw_task.completed:
@@ -538,10 +527,8 @@ class TrelloWarrior(object):
                     elif tw_task.active:
                         tw_task.save()
                         tw_task.stop()
-                        tw_task_modified = False
         # Save Task warrior changes (if any)
-        if tw_task_modified:
-            tw_task.save()
+        tw_task.save()
 
     def move_task_to_list(self, project, trello_card, tw_task, list_name):
         logger.info('Task %s kicked to %s' % (tw_task['id'], list_name))
@@ -549,8 +536,6 @@ class TrelloWarrior(object):
         trello_card.change_list(trello_list.id)
         if tw_task['trellolistname'] != list_name:
             tw_task['trellolistname'] = list_name
-            return True
-        return False
 
     def sync(self, projects=None):
         """
