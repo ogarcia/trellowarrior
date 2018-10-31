@@ -224,7 +224,8 @@ class TrelloWarrior(object):
                 if board.name in trello_sync:
                     if board.name not in self._trello_boards:
                         self._trello_boards[board.name] = {'board': board, 'lists': None}
-                        existing_labels = {l.id: l for l in board.get_labels()}
+                        existing_labels = {l.name: l for l in board.get_labels()}
+                        labels_to_keep = []
                         for tag in trello_sync[board.name].tags_color:
                             if tag['name'] not in existing_labels:
                                 logger.debug('creating label : {} -- {}'.format(tag['name'], tag['color']))
@@ -233,6 +234,11 @@ class TrelloWarrior(object):
                                 board.delete_label(existing_labels[tag['name']].id)
                                 existing_labels[tag['name']] = board.add_label(tag['name'], tag['color'])
                             trello_sync[board.name].trello_labels[tag['name']] = existing_labels[tag['name']]
+                            labels_to_keep.append(existing_labels[tag['name']].id)
+                        for label in board.get_labels():
+                            if label.id not in labels_to_keep:
+                                logger.debug('Deleting label : {} ({})'.format(label.name, label.id))
+                                board.delete_label(label.id)
         return self._trello_boards
 
     def get_trello_board(self, board_name):
@@ -494,7 +500,7 @@ class TrelloWarrior(object):
             if trello_labels is None:
                 trello_labels = []
             trello_labels_name = [label.name for label in trello_labels]
-            for tag in tw_task['tags']:
+            for tag in tw_task['tags'].copy():
                 if tag in project.trello_labels and tag not in trello_labels_name:
                     tw_task['tags'].remove(tag)
             for label in trello_labels:
@@ -656,7 +662,7 @@ def new_project(args):
 def main():
     parser = argparse.ArgumentParser(description="Bidirectional sync between trello and taskwarrior")
     parser.add_argument('-c', '--config', metavar='value', help='custom configuration file path')
-    parser.add_argument('-v', '--verbose', help='Increase verbosity. Can be repeated up to 2 times', action='count')
+    parser.add_argument('-v', '--verbose', help='Increase verbosity. Can be repeated up to 2 times', action='count', default=0)
     subparsers = parser.add_subparsers()
     sync_parser = subparsers.add_parser('sync', help="Synchronize trello and taskwarrior")
     sync_parser.add_argument("projects", nargs='*',
