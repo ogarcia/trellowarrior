@@ -82,10 +82,10 @@ class TrelloWarrior(object):
         for project_name in self.sync_projects:
             project = self.all_projects.get(project_name)
             if project is None:
-                logger.error("Project {} is not defined".format(project))
+                logger.error("Project {} is not defined".format(project_name))
                 res = False
             elif not project.is_valid():
-                logger.error("Project {} is not valid, missing required variable".format(project))
+                logger.error("Project {} is not valid, missing required variable".format(project_name))
                 res = False
         return res
 
