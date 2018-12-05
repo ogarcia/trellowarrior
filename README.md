@@ -162,6 +162,7 @@ equivalence between Taskwarrior and Trello.
 * `trello_todo_list` Optional. The name of Trello list where new pending tasks are stored. Default: `To Do`
 * `trello_doing_list` Optional. The name of Trello list for active tasks. Default: `Doing`
 * `trello_done_list` Optional. The name of Trello list for done taks. Default: `Done`
+* `tags_color` Optional. Mapping between taskwarrior tags and trello labels. Json encoded list of dict like : `[{"color": "blue", "name": "trellowarrior"}, {"color": "green", "name": "personal"}]`. Cannot have multiple labels with the same name and will remove not mapped ones.
 
 ## Equivalences
 
@@ -172,6 +173,7 @@ equivalence between Taskwarrior and Trello.
 | Project             | Board Name    |
 | Description         | Card Name     |
 | Due                 | Card Due Date |
+| Tag                 | Label         |
 
 ## Known limitations
 
@@ -188,4 +190,4 @@ these lists can be configured.
 If you have several boards with same name, TrelloWarrior always picks the
 first one.
 
-For now, only syncs *Title/Description*, *Due dates* and *Status*.
+For now, only syncs *Title/Description*, *Due dates*, *Tags, and *Status*.
