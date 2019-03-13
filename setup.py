@@ -29,6 +29,7 @@ setup(
     keywords = project.KEYWORDS,
     url = project.URL,
     long_description=read('README.md'),
+    long_description_content_type='text/markdown',
     packages=find_packages(),
     install_requires=read('requirements.txt'),
     entry_points={
