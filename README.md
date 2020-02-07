@@ -70,7 +70,7 @@ First go to: https://trello.com/app-key to get your API Key and API Secret.
 
 Then call trellowarrior with the authenticate command :
 ```sh
-trellowarrior.py -c path/to/your/configfile authenticate --api-key your_api_key --api-key-secret your_api_secret --trello-name TrelloWarrior --expiration 30days
+trellowarrior.py -c path/to/your/configfile authenticate --api-key your_api_key --api-key-secret your_api_secret --name TrelloWarrior --expiration 30days
 ```
 
 If the config file already exist, an error will be printed and the command will stop without doing anything.
@@ -125,16 +125,16 @@ set the configuration file path with `-c` or `--config` argument.
 
 To synchronize trello and task warrior, simply call trellowarrior with the sync command
 
-```sh 
+```sh
 trellowarrior.py sync
 ```
 
 You can also add a list of project(s) to synchronize :
 
-```sh 
+```sh
 trellowarrior.py sync project1 project2
 ```
- 
+
 ### DEFAULT Section
 
 In the `DEFAULT` section, it is mandatory to set your Trello API key and
