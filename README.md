@@ -34,9 +34,22 @@ the task to another list.
 
 #### Prepare the environment
 
+##### In Arch Linux
+
+TrelloWarrior is packaged in
+[AUR](https://aur.archlinux.org/packages/trellowarrior), to obtain it simply
+use your AUR helper. For example with [yay](https://github.com/jguer/yay):
+
+```
+yay -S trellowarrior
+```
+
+Or if you prefer a fully binary package you can configure [Connectical Arch
+Linux repository](https://repo.connectical.com/).
+
 ##### The easy way
 
-Simply create a Python 2/3 virtualenv and install via pip:
+Simply create a Python 3 virtualenv and install via pip:
 
 ```
 virtualenv trw
@@ -52,7 +65,7 @@ For run TrelloWarrior you need to install
 Python helpers to comunicate with Taskwarrior and Trello.
 
 You can use your package system to install it, but the best way is to use
-a Python 2/3 virtualenv:
+a Python 3 virtualenv:
 
 ```sh
 virtualenv trw
@@ -68,12 +81,14 @@ for it.
 
 First go to: https://trello.com/app-key to get your API Key and API Secret.
 
-Then call trellowarrior with the authenticate command :
+Then call TrelloWarrior with the authenticate command:
+
 ```sh
-trellowarrior.py -c path/to/your/configfile authenticate --api-key your_api_key --api-key-secret your_api_secret --name TrelloWarrior --expiration 30days
+trellowarrior auth --api-key your_api_key --api-key-secret your_api_secret --expiration 30days --name TrelloWarrior
 ```
 
-If the config file already exist, an error will be printed and the command will stop without doing anything.
+Note: `--expiration` and `--name` are optional, they are set by default to
+`30days` and `TrelloWarrior` respectively.
 
 You can set the `TRELLO_EXPIRATION` to `1hour`, `1day`, `30days`,
 `never`. We recomend use `30days` for tests and `never` for daily use.
@@ -119,20 +134,25 @@ The config file is now initialized with the needed configuration variables.
 The TrelloWarrior config is very easy. There is a `trellowarrior.conf`
 sample file that you can modify to set with your data.
 
-You can place the config file with `trellowarrior.py`, in your home as
-`~/.trellowarrior.conf` or `~/.config/trellowarrior/trellowarrior.conf`, or
-set the configuration file path with `-c` or `--config` argument.
+You can place the config file with `trellowarrior`, in your home as
+`~/.trellowarrior.conf` or (by default if not previous config file exists)
+following the [XDG
+Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+in `$XDG_CONFIG_HOME/trellowarrior/trellowarrior.conf` (fallbacks to
+`~/.config/trellowarrior/trellowarrior.conf`), or set the configuration file
+path with `-c` or `--config` argument.
 
-To synchronize trello and task warrior, simply call trellowarrior with the sync command
+To synchronize Trello and Taskwarrior, simply call TrelloWarrior with the
+sync command or without any command.
 
 ```sh
-trellowarrior.py sync
+trellowarrior sync
 ```
 
-You can also add a list of project(s) to synchronize :
+You can also add a list of project(s) to synchronize:
 
 ```sh
-trellowarrior.py sync project1 project2
+trellowarrior sync project1 project2
 ```
 
 ### DEFAULT Section
@@ -157,7 +177,7 @@ that define the Taskwarrior project and Trello board equivalence.
 The Project/Board sections are called from `sync_projects` and define the
 equivalence between Taskwarrior and Trello.
 
-* `tw_project_name` MANDATORY. The name of project in Taskwarrior.
+* `taskwarrior_project_name` MANDATORY. The name of project in Taskwarrior.
 * `trello_board_name` MANDATORY. The name of Trello Board.
 * `trello_todo_list` Optional. The name of Trello list where new pending tasks are stored. Default: `To Do`
 * `trello_doing_list` Optional. The name of Trello list for active tasks. Default: `Doing`
@@ -175,7 +195,7 @@ equivalence between Taskwarrior and Trello.
 
 ## Known limitations
 
-The main objective of TaskWarrior is to be simple so it **doesn't manage
+The main objective of TrelloWarrior is to be simple so it **doesn't manage
 collisions**. The sync strategy is **last modified wins**, this means that if
 you do a modification in Trello and later a modification in Taskwarrior,
 TrelloWarrior does the sync and keeps the Taskwarrior data, because it is
@@ -189,3 +209,15 @@ If you have several boards with same name, TrelloWarrior always picks the
 first one.
 
 For now, only syncs *Title/Description*, *Due dates* and *Status*.
+
+## Contributing
+
+See [CONTRIBUTING](CONTRIBUTING.md).
+
+## License
+
+This software is licensed under the terms of the GNU General Public License
+version 3 (GPLv3).
+
+Full text of the license is available in the [LICENSE](LICENSE) file and
+[online](https://opensource.org/licenses/gpl-3.0.html).

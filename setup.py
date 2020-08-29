@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2016-2018 Óscar García Amor <ogarcia@connectical.com>
+# Copyright © 2016-2020 Óscar García Amor <ogarcia@connectical.com>
 #
 # Distributed under terms of the GNU GPLv3 license.
 
@@ -42,7 +42,7 @@ setup(
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2',
