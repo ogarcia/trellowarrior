@@ -169,7 +169,7 @@ class TrelloWarriorClient:
         # Compare and sync Taskwarrior with Trello
         logger.info('Syncing project {} step 2: syncing changes between Taskwarrior and Trello'.format(project.project_name))
         trello_lists = self.trello_client.get_trello_lists(project.trello_board_name)
-        trello_cards_dict = self.trello_client.get_trello_cards_dict(trello_lists)
+        trello_cards_dict = self.trello_client.get_trello_cards_dict(trello_lists, project.trello_lists_filter)
         trello_cards_ids = [] # List to store cards IDs to compare later with local trelloid
         for trello_list_name in trello_cards_dict:
             for trello_card in trello_cards_dict[trello_list_name]:

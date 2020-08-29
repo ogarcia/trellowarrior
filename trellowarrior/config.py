@@ -93,12 +93,27 @@ class Config:
                         if taskwarrior_project_name is None:
                             logger.warning('Deprecated option \'tw_project_name\' found in \'{}\' project config, you must change it to \'taskwarrior_project_name\' to avoid problems in next release'.format(project))
                             taskwarrior_project_name = config_parser.get(project, 'tw_project_name')
+                        lists_filter = config_parser.get(project, 'trello_lists_filter', fallback='').split(',')
+                        todo_list = config_parser.get(project, 'trello_todo_list', fallback='To Do')
+                        doing_list = config_parser.get(project, 'trello_doing_list', fallback='Doing')
+                        done_list = config_parser.get(project, 'trello_done_list', fallback='Done')
+                        FilterWarning = lambda basic_list: logger.warning('Cannot add {} list to lists filter, removing it'.format(basic_list))
+                        if todo_list in lists_filter:
+                            FilterWarning('todo')
+                            lists_filter.remove(todo_list)
+                        if doing_list in lists_filter:
+                            FilterWarning('doing')
+                            lists_filter.remove(doing_list)
+                        if done_list in lists_filter:
+                            FilterWarning('done')
+                            lists_filter.remove(done_list)
                         self.sync_projects.append(TrelloWarriorProject(project,
                             taskwarrior_project_name,
                             config_parser.get(project, 'trello_board_name'),
-                            trello_todo_list = config_parser.get(project, 'trello_todo_list', fallback='To Do'),
-                            trello_doing_list = config_parser.get(project, 'trello_doing_list', fallback='Doing'),
-                            trello_done_list = config_parser.get(project, 'trello_done_list', fallback='Done')))
+                            trello_todo_list = todo_list,
+                            trello_doing_list = doing_list,
+                            trello_done_list = done_list,
+                            trello_lists_filter = lists_filter))
                 else:
                     logger.warning('Missing config section for sync project \'{}\', ignoring it'.format(sync_project))
             if self.sync_projects == []:

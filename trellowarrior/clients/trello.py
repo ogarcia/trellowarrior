@@ -61,7 +61,7 @@ class TrelloClient:
         trello_lists.append(trello_list) # Update trello_lists with new list
         return trello_list
 
-    def get_trello_cards_dict(self, trello_lists):
+    def get_trello_cards_dict(self, trello_lists, lists_filter=None):
         """
         Get all cards of a list of Trello lists in a dictionary
 
@@ -70,6 +70,8 @@ class TrelloClient:
         :rtype: dict
         """
         trello_cards_dict = {}
+        if lists_filter is not None:
+            trello_lists = filter(lambda trello_list: trello_list.name not in lists_filter, trello_lists)
         for trello_list in trello_lists:
             logger.debug('Getting Trello cards of list {}'.format(trello_list.name))
             trello_cards_dict[trello_list.name] = trello_list.list_cards()

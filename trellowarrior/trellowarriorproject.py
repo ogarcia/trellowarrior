@@ -14,6 +14,7 @@ class TrelloWarriorProject:
         self.trello_todo_list = kwargs.get('trello_todo_list', 'To Do')
         self.trello_doing_list = kwargs.get('trello_doing_list', 'Doing')
         self.trello_done_list = kwargs.get('trello_done_list', 'Done')
+        self.trello_lists_filter = kwargs.get('trello_lists_filter', None)
 
     def __str__(self):
         return str(self.__dict__)
