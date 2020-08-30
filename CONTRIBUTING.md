@@ -41,4 +41,4 @@ documented**.
 
 ## Contributors
 
-- [Jean Jordaan](@jean)
+- [Jean Jordaan](https://github.com/jean)
