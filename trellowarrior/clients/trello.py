@@ -16,6 +16,19 @@ logger = logging.getLogger(__name__)
 class TrelloClient:
     def __init__(self, api_key, api_secret, token, token_secret):
         self.trello_client = Client(api_key=api_key, api_secret=api_secret, token=token, token_secret=token_secret)
+        self._uid = None
+
+    @property
+    def whoami(self):
+        """
+        Get my Trello UID
+
+        :return: my Trello UID
+        :rtype: string
+        """
+        if self._uid is None:
+            self._uid = self.trello_client.get_member('me').id
+        return self._uid
 
     def get_trello_board(self, board_name):
         """
@@ -61,11 +74,13 @@ class TrelloClient:
         trello_lists.append(trello_list) # Update trello_lists with new list
         return trello_list
 
-    def get_trello_cards_dict(self, trello_lists, lists_filter=None):
+    def get_trello_cards_dict(self, trello_lists, lists_filter=None, only_my_cards=False):
         """
         Get all cards of a list of Trello lists in a dictionary
 
         :param trello_lists: list of Trello lists
+        :param lists_filter: Trello list names list to do not sync
+        :param only_my_cards: if True get only the cards assigned to me
         :return: a dict with Cards
         :rtype: dict
         """
@@ -75,6 +90,8 @@ class TrelloClient:
         for trello_list in trello_lists:
             logger.debug('Getting Trello cards of list {}'.format(trello_list.name))
             trello_cards_dict[trello_list.name] = trello_list.list_cards()
+            if only_my_cards:
+                trello_cards_dict[trello_list.name] = filter(lambda trello_card: self.whoami in trello_card.member_ids, trello_cards_dict[trello_list.name])
         return trello_cards_dict
 
     def delete_trello_card(self, trello_card_id):

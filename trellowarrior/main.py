@@ -11,14 +11,12 @@ from trellowarrior.commands.configedit import config_get, config_set, config_rem
 from trellowarrior.commands.configprojectedit import config_project_list, config_project_add, config_project_modify, config_project_show
 from trellowarrior.commands.configprojectedit import config_project_enable, config_project_disable, config_project_remove
 from trellowarrior.commands.sync import sync
+from trellowarrior.commands.version import version
 from trellowarrior.config import config
 
 import argparse
 import logging
 import os
-
-def version(args):
-    print('Vers')
 
 def main():
     # Set loglevel equivalents for argument parser
@@ -78,6 +76,8 @@ def main():
     config_project_add_parser.add_argument('--todo', default='To Do', help='to do Trello list name, default: %(default)s')
     config_project_add_parser.add_argument('--doing', default='Doing', help='doing Trello list name, default: %(default)s')
     config_project_add_parser.add_argument('--done', default='Done', help='done Trello list name, default: %(default)s')
+    config_project_add_parser.add_argument('--filter', help='Trello lists to filter on sync (separated by commas)')
+    config_project_add_parser.add_argument('-o', '--only-my-cards', action='store_true', help='sync only cards assigned to me')
     config_project_add_parser.add_argument('-d', '--disabled', action='store_true', help='add project disabled')
     config_project_add_parser.set_defaults(func=config_project_add)
 
@@ -88,6 +88,8 @@ def main():
     config_project_modify_parser.add_argument('--todo', help='to do Trello list name')
     config_project_modify_parser.add_argument('--doing', help='doing Trello list name')
     config_project_modify_parser.add_argument('--done', help='done Trello list name')
+    config_project_modify_parser.add_argument('--filter', help='Trello lists to filter on sync (separated by commas)')
+    config_project_modify_parser.add_argument('--only-my-cards', choices=['yes', 'no'], help='sync only cards assigned to me')
     config_project_modify_parser.set_defaults(func=config_project_modify)
 
     config_project_show_parser = config_project_subparsers.add_parser('show', help='show project configuration')

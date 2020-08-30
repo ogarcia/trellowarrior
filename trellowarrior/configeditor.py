@@ -55,6 +55,20 @@ class ConfigEditor:
         else:
             return self.config_parser.get(section, option, fallback=fallback)
 
+    def readboolean(self, section, option, fallback=False):
+        """
+        Returns a boolean config option value from config file
+
+        :param section: section where the option is stored
+        :param option: option name
+        :param fallback: (optional) fallback value
+        :return: a config option value
+        :rtype: boolean
+        """
+        if self.config_file == None:
+            raise InvalidOperation('readboolean')
+        return self.config_parser.getboolean(section, option, fallback=fallback)
+
     def write(self, section, option, value):
         """
         Write a config option value in config object

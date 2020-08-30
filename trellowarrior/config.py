@@ -107,13 +107,19 @@ class Config:
                         if done_list in lists_filter:
                             FilterWarning('done')
                             lists_filter.remove(done_list)
+                        try:
+                            only_my_cards = config_parser.getboolean(project, 'only_my_cards', fallback=False)
+                        except ValueError:
+                            only_my_cards = False
+                            logger.warning('Option \'only_my_cards\' is misconfigured in project \'{}\', ignoring it'.format(project))
                         self.sync_projects.append(TrelloWarriorProject(project,
                             taskwarrior_project_name,
                             config_parser.get(project, 'trello_board_name'),
                             trello_todo_list = todo_list,
                             trello_doing_list = doing_list,
                             trello_done_list = done_list,
-                            trello_lists_filter = lists_filter))
+                            trello_lists_filter = lists_filter,
+                            only_my_cards = only_my_cards))
                 else:
                     logger.warning('Missing config section for sync project \'{}\', ignoring it'.format(sync_project))
             if self.sync_projects == []:

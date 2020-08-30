@@ -19,16 +19,19 @@ class TrelloWarriorClient:
         self.taskwarrior_client = TaskwarriorClient(config.taskwarrior_taskrc_location, config.taskwarrior_data_location)
         self.trello_client = TrelloClient(config.trello_api_key, config.trello_api_secret, config.trello_token, config.trello_token_secret)
 
-    def upload_taskwarrior_task(self, taskwarrior_task, trello_list):
+    def upload_taskwarrior_task(self, project, taskwarrior_task, trello_list):
         """
         Upload all contents of Taskwarrior task to a Trello list creating a new card and storing cardid
 
+        :param project: TrelloWarrior project object
         :param taskwarrior_task: Taskwarrior task object
         :param trello_list: Trello list object
         """
         new_trello_card = trello_list.add_card(taskwarrior_task['description'])
         if taskwarrior_task['due']:
             new_trello_card.set_due(taskwarrior_task['due'])
+        if project.only_my_cards:
+            new_trello_card.assign(self.trello_client.whoami)
         taskwarrior_task['trelloid'] = new_trello_card.id
         taskwarrior_task.save()
 
@@ -41,7 +44,7 @@ class TrelloWarriorClient:
         :param trello_card: Trello card object
         """
         new_taskwarrior_task = self.taskwarrior_client.new_task()
-        new_taskwarrior_task['project'] = project.project_name
+        new_taskwarrior_task['project'] = project.taskwarrior_project_name
         new_taskwarrior_task['description'] = trello_card.name
         if trello_card.due_date:
             new_taskwarrior_task['due'] = trello_card.due_date
@@ -159,7 +162,7 @@ class TrelloWarriorClient:
         """
         # Get all Taskwarrior deleted tasks and seek for ones that have trelloid (deleted in Taskwarrior)
         logger.info('Syncing project {} step 1: delete Trello cards that already deleted in Taskwarrior'.format(project.project_name))
-        taskwarrior_deleted_tasks = self.taskwarrior_client.get_deleted_tasks(project.project_name)
+        taskwarrior_deleted_tasks = self.taskwarrior_client.get_deleted_tasks(project.taskwarrior_project_name)
         for taskwarrior_deleted_task in taskwarrior_deleted_tasks:
             if taskwarrior_deleted_task['trelloid']:
                 logger.info('Deleting previously deleted Taskwarrior task with ID {} from Trello'.format(taskwarrior_deleted_task['trelloid']))
@@ -169,7 +172,7 @@ class TrelloWarriorClient:
         # Compare and sync Taskwarrior with Trello
         logger.info('Syncing project {} step 2: syncing changes between Taskwarrior and Trello'.format(project.project_name))
         trello_lists = self.trello_client.get_trello_lists(project.trello_board_name)
-        trello_cards_dict = self.trello_client.get_trello_cards_dict(trello_lists, project.trello_lists_filter)
+        trello_cards_dict = self.trello_client.get_trello_cards_dict(trello_lists, project.trello_lists_filter, project.only_my_cards)
         trello_cards_ids = [] # List to store cards IDs to compare later with local trelloid
         for trello_list_name in trello_cards_dict:
             for trello_card in trello_cards_dict[trello_list_name]:
@@ -186,7 +189,7 @@ class TrelloWarriorClient:
                     self.sync_task_card(project, trello_lists, trello_list_name, trello_card, taskwarrior_task)
         # Compare Trello and Taskwarrior tasks for remove deleted Trello tasks in Taskwarrior
         logger.info('Syncing project {} step 3: delete Takswarrior tasks that already deleted in Trello'.format(project.project_name))
-        taskwarrior_tasks_ids = self.taskwarrior_client.get_tasks_ids_set(project.project_name)
+        taskwarrior_tasks_ids = self.taskwarrior_client.get_tasks_ids_set(project.taskwarrior_project_name)
         taskwarrior_tasks_ids.discard(None) # Remove None element if present (new tasks created with Taskwarrior)
         trello_cards_ids = set(trello_cards_ids) # Convert trello_cards_ids list in a set
         for deleted_trello_task_id in taskwarrior_tasks_ids - trello_cards_ids:
@@ -197,25 +200,25 @@ class TrelloWarriorClient:
             logger.info('Deleting previously deleted Trello task with ID {} from Taskwarrior'.format(deleted_trello_task_id))
         # Upload new Taskwarrior tasks that never uploaded before
         logger.info('Syncing project {} step 4: upload new Takswarrior tasks'.format(project.project_name))
-        for taskwarrior_pending_task in self.taskwarrior_client.get_pending_tasks(project.project_name):
+        for taskwarrior_pending_task in self.taskwarrior_client.get_pending_tasks(project.taskwarrior_project_name):
             logger.info('Uploading new pending Taskwarrior task with ID {} to Trello'.format(taskwarrior_pending_task['id']))
             if taskwarrior_pending_task.active:
                 # Upload new pending active task to doing list
-                self.upload_taskwarrior_task(taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_doing_list))
+                self.upload_taskwarrior_task(project, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_doing_list))
                 taskwarrior_pending_task['trellolistname'] = project.trello_doing_list
                 taskwarrior_pending_task.save()
             else:
                 if taskwarrior_pending_task['trellolistname']:
                     # Upload new pending task to user provided list
-                    self.upload_taskwarrior_task(taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, taskwarrior_pending_task['trellolistname']))
+                    self.upload_taskwarrior_task(project, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, taskwarrior_pending_task['trellolistname']))
                 else:
                     # Upload new pending task to default todo list
-                    self.upload_taskwarrior_task(taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_todo_list))
+                    self.upload_taskwarrior_task(project, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_todo_list))
                     taskwarrior_pending_task['trellolistname'] = project.trello_todo_list
                     taskwarrior_pending_task.save()
-        for taskwarrior_completed_task in self.taskwarrior_client.get_completed_tasks(project.project_name):
+        for taskwarrior_completed_task in self.taskwarrior_client.get_completed_tasks(project.taskwarrior_project_name):
             logger.info('Uploading new completed Taskwarrior task to Trello')
-            self.upload_taskwarrior_task(taskwarrior_completed_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_done_list))
+            self.upload_taskwarrior_task(project, taskwarrior_completed_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_done_list))
             taskwarrior_completed_task['trellolistname'] = project.trello_done_list
             taskwarrior_completed_task.save()
         logger.info('Project {} synchronized'.format(project.project_name))

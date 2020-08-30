@@ -50,6 +50,10 @@ def config_project_add(args):
     config_editor.write(args.name, 'trello_todo_list', args.todo)
     config_editor.write(args.name, 'trello_doing_list', args.doing)
     config_editor.write(args.name, 'trello_done_list', args.done)
+    if args.filter is not None:
+        config_editor.write(args.name, 'trello_lists_filter', args.filter)
+    if args.only_my_cards:
+        config_editor.write(args.name, 'only_my_cards', True)
 
     if not args.disabled:
         # Add project to enabled projects
@@ -60,7 +64,7 @@ def config_project_add(args):
 
 def config_project_modify(args):
     # Check if user provides any option
-    if not any([args.taskwarrior, args.trello, args.todo, args.doing, args.done]):
+    if not any([args.taskwarrior, args.trello, args.todo, args.doing, args.done, args.filter, args.only_my_cards]):
         sys.stderr.write('Must provide an option to modify\n')
         sys.exit(1)
 
@@ -82,6 +86,10 @@ def config_project_modify(args):
         config_editor.write(args.name, 'trello_doing_list', args.doing)
     if args.done is not None:
         config_editor.write(args.name, 'trello_done_list', args.done)
+    if args.filter is not None:
+        config_editor.write(args.name, 'trello_lists_filter', args.filter)
+    if args.only_my_cards is not None:
+        config_editor.write(args.name, 'only_my_cards', True if args.only_my_cards == 'yes' else False)
 
     config_editor.save()
     logger.info('Project \'{}\' modified'.format(args.name))
@@ -106,9 +114,16 @@ def config_project_show(args):
         sys.stdout.write('Trello board name: {}\n'.format(config_editor.read(args.name, 'trello_board_name')))
     except NoOptionError:
         sys.stdout.write('Warning: missing Trello board name\n')
-    sys.stdout.write('Trello To Do list: {}\n'.format(config_editor.read(args.name, 'trello_board_name', 'To Do')))
-    sys.stdout.write('Trello Doing list: {}\n'.format(config_editor.read(args.name, 'trello_board_name', 'Doing')))
-    sys.stdout.write('Trello Done list: {}\n'.format(config_editor.read(args.name, 'trello_board_name', 'Done')))
+    sys.stdout.write('Trello To Do list: {}\n'.format(config_editor.read(args.name, 'trello_todo_list', 'To Do')))
+    sys.stdout.write('Trello Doing list: {}\n'.format(config_editor.read(args.name, 'trello_doing_list', 'Doing')))
+    sys.stdout.write('Trello Done list: {}\n'.format(config_editor.read(args.name, 'trello_done_list', 'Done')))
+    trello_lists_filter = config_editor.read(args.name, 'trello_lists_filter', '')
+    if trello_lists_filter != '':
+        sys.stdout.write('Trello lists filter: {}\n'.format(trello_lists_filter))
+    try:
+        sys.stdout.write('Sync only my cards: {}\n'.format(config_editor.readboolean(args.name, 'only_my_cards')))
+    except ValueError:
+        sys.stdout.write('Warning: misconfigured only_my_cards option\n')
 
 def config_project_enable(args):
     # Open config

@@ -183,6 +183,7 @@ equivalence between Taskwarrior and Trello.
 * `trello_doing_list` Optional. The name of Trello list for active tasks. Default: `Doing`
 * `trello_done_list` Optional. The name of Trello list for done taks. Default: `Done`
 * `trello_lists_filter` Optional. To filter Trello lists from syncing.
+* `only_my_cards` Optional. Sync ony cards / tasks assigned to me.
 
 ## Equivalences
 
