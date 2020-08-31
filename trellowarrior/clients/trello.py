@@ -74,6 +74,35 @@ class TrelloClient:
         trello_lists.append(trello_list) # Update trello_lists with new list
         return trello_list
 
+    def get_trello_board_labels(self, board_name):
+        """
+        Get the labels of a Trello board
+
+        :param board_name: the board name
+        :return: a list of Trello label objects
+        :rtype: list
+        """
+        return self.get_trello_board(board_name).get_labels()
+
+    def get_trello_board_label(self, board_name, board_labels, label_name):
+        """
+        Get a Trello board label from label name, if it does not exist create it
+
+        :param board_name: the board name
+        :param board_labels: list of Trello board labels objects
+        :param label_name: the label name
+        :return: a Tello label
+        :rtype: Trello label object
+        """
+        for board_label in board_labels:
+            if board_label.name == label_name:
+                logger.debug('Trello board label {} found'.format(label_name))
+                return board_label
+        logger.debug('Creating Trello board label {}'.format(label_name))
+        board_label = self.get_trello_board(board_name).add_label(label_name, 'black')
+        board_labels.append(board_label) # Update board_labels with new label
+        return board_label
+
     def get_trello_cards_dict(self, trello_lists, lists_filter=None, only_my_cards=False):
         """
         Get all cards of a list of Trello lists in a dictionary

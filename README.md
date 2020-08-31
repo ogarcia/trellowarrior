@@ -194,6 +194,7 @@ equivalence between Taskwarrior and Trello.
 | Project             | Board Name    |
 | Description         | Card Name     |
 | Due                 | Card Due Date |
+| Tags                | Card Labels   |
 
 ## Known limitations
 
@@ -207,10 +208,19 @@ You can have infinite lists in your Trello, but all of them are considered
 as *pending*. You only can have one *doing* list and one *done* list, but
 these lists can be configured.
 
-If you have several boards with same name, TrelloWarrior always picks the
-first one.
+If you have several boards with same name or several labels with same name,
+TrelloWarrior always picks the first one.
 
-For now, only syncs *Title/Description*, *Due dates* and *Status*.
+Only Trello labels with names are synchronized, you can apply labels without
+name but these are ignored.
+
+If you remove a name from a label and left it without name, the action don't
+touch date of cards and in next sync a new label will be created with the
+removed name. You can rename labels without problems.
+
+New labels are created by TrelloWarrior in black color.
+
+For now, only syncs *Title/Description*, *Due dates*, *Labels* and *Status*.
 
 ## Contributing
 

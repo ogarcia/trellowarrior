@@ -19,7 +19,7 @@ class TrelloWarriorClient:
         self.taskwarrior_client = TaskwarriorClient(config.taskwarrior_taskrc_location, config.taskwarrior_data_location)
         self.trello_client = TrelloClient(config.trello_api_key, config.trello_api_secret, config.trello_token, config.trello_token_secret)
 
-    def upload_taskwarrior_task(self, project, taskwarrior_task, trello_list):
+    def upload_taskwarrior_task(self, project, trello_board_labels, taskwarrior_task, trello_list):
         """
         Upload all contents of Taskwarrior task to a Trello list creating a new card and storing cardid
 
@@ -30,6 +30,9 @@ class TrelloWarriorClient:
         new_trello_card = trello_list.add_card(taskwarrior_task['description'])
         if taskwarrior_task['due']:
             new_trello_card.set_due(taskwarrior_task['due'])
+        for tag in taskwarrior_task['tags']:
+            trello_label = self.trello_client.get_trello_board_label(project.trello_board_name, trello_board_labels, tag)
+            new_trello_card.add_label(trello_label)
         if project.only_my_cards:
             new_trello_card.assign(self.trello_client.whoami)
         taskwarrior_task['trelloid'] = new_trello_card.id
@@ -48,6 +51,9 @@ class TrelloWarriorClient:
         new_taskwarrior_task['description'] = trello_card.name
         if trello_card.due_date:
             new_taskwarrior_task['due'] = trello_card.due_date
+        if trello_card.labels:
+            for label in trello_card.labels:
+                new_taskwarrior_task['tags'].add(label.name)
         new_taskwarrior_task['trelloid'] = trello_card.id
         new_taskwarrior_task['trellolistname'] = list_name
         new_taskwarrior_task.save()
@@ -59,11 +65,12 @@ class TrelloWarriorClient:
             new_taskwarrior_task.done()
             logger.info('New task {} kicked to done list'.format(new_taskwarrior_task['id']))
 
-    def sync_task_card(self, project, trello_lists, list_name, trello_card, taskwarrior_task):
+    def sync_task_card(self, project, trello_board_labels, trello_lists, list_name, trello_card, taskwarrior_task):
         """
         Sync an existing Taskwarrior task with an existing Trello card
 
         :param project: TrelloWarrior project object
+        :param trello_board_labels: list of Trello board label objects
         :param trello_lists: list of Trello lists objects
         :param list_name: name of the Trello list where the card is stored
         :param trello_card: Trello card object
@@ -95,6 +102,25 @@ class TrelloWarriorClient:
             taskwarrior_task['due'] = trello_card.due_date
             taskwarrior_task_modified = True
             logger.info('Due date of task {} synchronized'.format(taskwarrior_task['id']))
+        # Task tags <> Trello labels
+        trello_card_labels_set = set(trello_card.labels) if trello_card.labels else set()
+        trello_card_labels_name_set = set([label.name for label in trello_card_labels_set])
+        if taskwarrior_task['tags'] != trello_card_labels_name_set:
+            if taskwarrior_task['modified'] > trello_card.date_last_activity:
+                # Taskwarrior data is newer
+                for tag in taskwarrior_task['tags']:
+                    # Get or create label in board
+                    trello_label = self.trello_client.get_trello_board_label(project.trello_board_name, trello_board_labels, tag)
+                    if not trello_label in trello_card_labels_set:
+                        trello_card.add_label(trello_label) # Assign label to card
+                for label in trello_card_labels_set:
+                    if not label.name in taskwarrior_task['tags']:
+                        trello_card.remove_label(label) # Remove labels that are not present in tag list
+            else:
+                # Trello data is newer
+                taskwarrior_task['tags'] = trello_card_labels_name_set # Copy tags from Trello labels
+                taskwarrior_task_modified = True
+            logger.info('Tags of task {} synchronized'.format(taskwarrior_task['id']))
         # Task list name and status <> Trello list name
         if taskwarrior_task.pending and not taskwarrior_task.active and taskwarrior_task['trellolistname'] in [project.trello_doing_list, project.trello_done_list] and taskwarrior_task['modified'] > trello_card.date_last_activity:
             # Task kicked to To Do in Taskwarrior and not synchronized
@@ -172,6 +198,7 @@ class TrelloWarriorClient:
         # Compare and sync Taskwarrior with Trello
         logger.info('Syncing project {} step 2: syncing changes between Taskwarrior and Trello'.format(project.project_name))
         trello_lists = self.trello_client.get_trello_lists(project.trello_board_name)
+        trello_board_labels = self.trello_client.get_trello_board_labels(project.trello_board_name)
         trello_cards_dict = self.trello_client.get_trello_cards_dict(trello_lists, project.trello_lists_filter, project.only_my_cards)
         trello_cards_ids = [] # List to store cards IDs to compare later with local trelloid
         for trello_list_name in trello_cards_dict:
@@ -186,7 +213,7 @@ class TrelloWarriorClient:
                     self.fetch_trello_card(project, trello_list_name, trello_card)
                 else:
                     # Sync Taskwarrior task with Trello card
-                    self.sync_task_card(project, trello_lists, trello_list_name, trello_card, taskwarrior_task)
+                    self.sync_task_card(project, trello_board_labels, trello_lists, trello_list_name, trello_card, taskwarrior_task)
         # Compare Trello and Taskwarrior tasks for remove deleted Trello tasks in Taskwarrior
         logger.info('Syncing project {} step 3: delete Takswarrior tasks that already deleted in Trello'.format(project.project_name))
         taskwarrior_tasks_ids = self.taskwarrior_client.get_tasks_ids_set(project.taskwarrior_project_name)
@@ -204,21 +231,21 @@ class TrelloWarriorClient:
             logger.info('Uploading new pending Taskwarrior task with ID {} to Trello'.format(taskwarrior_pending_task['id']))
             if taskwarrior_pending_task.active:
                 # Upload new pending active task to doing list
-                self.upload_taskwarrior_task(project, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_doing_list))
+                self.upload_taskwarrior_task(project, trello_board_labels, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_doing_list))
                 taskwarrior_pending_task['trellolistname'] = project.trello_doing_list
                 taskwarrior_pending_task.save()
             else:
                 if taskwarrior_pending_task['trellolistname']:
                     # Upload new pending task to user provided list
-                    self.upload_taskwarrior_task(project, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, taskwarrior_pending_task['trellolistname']))
+                    self.upload_taskwarrior_task(project, trello_board_labels, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, taskwarrior_pending_task['trellolistname']))
                 else:
                     # Upload new pending task to default todo list
-                    self.upload_taskwarrior_task(project, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_todo_list))
+                    self.upload_taskwarrior_task(project, trello_board_labels, taskwarrior_pending_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_todo_list))
                     taskwarrior_pending_task['trellolistname'] = project.trello_todo_list
                     taskwarrior_pending_task.save()
         for taskwarrior_completed_task in self.taskwarrior_client.get_completed_tasks(project.taskwarrior_project_name):
             logger.info('Uploading new completed Taskwarrior task to Trello')
-            self.upload_taskwarrior_task(project, taskwarrior_completed_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_done_list))
+            self.upload_taskwarrior_task(project, trello_board_labels, taskwarrior_completed_task, self.trello_client.get_trello_list(project.trello_board_name, trello_lists, project.trello_done_list))
             taskwarrior_completed_task['trellolistname'] = project.trello_done_list
             taskwarrior_completed_task.save()
         logger.info('Project {} synchronized'.format(project.project_name))
