@@ -6,20 +6,13 @@
 #
 # Distributed under terms of the GNU GPLv3 license.
 
+from trellowarrior.exceptions import InvalidOperation
 from configparser import RawConfigParser, NoOptionError
 
 import logging
 import os
 
 logger = logging.getLogger(__name__)
-
-class InvalidOperation(Exception):
-    def __init__(self, operation):
-        self.operation = operation
-        self.message = 'must open config file first'
-
-    def __str__(self):
-        return 'Cannot {}, {}'.format(self.operation, self.message)
 
 class ConfigEditor:
     def __init__(self):

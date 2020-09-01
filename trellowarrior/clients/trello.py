@@ -6,6 +6,7 @@
 #
 # Distributed under terms of the GNU GPLv3 license.
 
+from trellowarrior.exceptions import ClientError
 from trello import TrelloClient as Client
 from trello.exceptions import ResourceUnavailable
 
@@ -17,6 +18,12 @@ class TrelloClient:
     def __init__(self, api_key, api_secret, token, token_secret):
         self.trello_client = Client(api_key=api_key, api_secret=api_secret, token=token, token_secret=token_secret)
         self._uid = None
+        self._project = None
+        self._board = None
+        self._lists = None
+        self._board_labels = None
+        self._lists_filter = None
+        self._only_my_cards = False
 
     @property
     def whoami(self):
@@ -30,7 +37,20 @@ class TrelloClient:
             self._uid = self.trello_client.get_member('me').id
         return self._uid
 
-    def get_trello_board(self, board_name):
+    def project(self, project):
+        """
+        Set the class working project
+
+        :param project: TelloWarrior project object
+        """
+        if self._project == None or self._project.name != project.name:
+            self._board = self.get_board(project.trello_board_name)
+            self._lists = self.get_lists()
+            self._board_labels = self.get_board_labels()
+            self._lists_filter = project.trello_lists_filter
+            self._only_my_cards = project.only_my_cards
+
+    def get_board(self, board_name):
         """
         Get a open Trello board from name, if it does not exist create it
 
@@ -45,36 +65,35 @@ class TrelloClient:
         logger.debug('Creating Trello board {}'.format(board_name))
         return self.trello_client.add_board(board_name)
 
-    def get_trello_lists(self, board_name):
+    def get_lists(self):
         """
         Get the open lists of a Trello board
 
-        :param board_name: the board name
         :return: a list of Trello list objects
         :rtype: list
         """
-        return self.get_trello_board(board_name).open_lists()
+        return self._board.open_lists()
 
-    def get_trello_list(self, board_name, trello_lists, list_name):
+    def get_list(self, list_name):
         """
         Get a Trello list from list name, if it does not exist create it
 
-        :param board_name: the board name
-        :param trello_lists: list of Trello lists objects
         :param list_name: the list name
         :return: a Tello list
         :rtype: Trello list object
         """
-        for trello_list in trello_lists:
+        if self._lists == None:
+            raise ClientError('get_list')
+        for trello_list in self._lists:
             if trello_list.name == list_name:
                 logger.debug('Trello list {} found'.format(list_name))
                 return trello_list
         logger.debug('Creating Trello list {}'.format(list_name))
-        trello_list = self.get_trello_board(board_name).add_list(list_name)
-        trello_lists.append(trello_list) # Update trello_lists with new list
+        trello_list = self._board.add_list(list_name)
+        self._lists.append(trello_list) # Update _lists with new list
         return trello_list
 
-    def get_trello_board_labels(self, board_name):
+    def get_board_labels(self):
         """
         Get the labels of a Trello board
 
@@ -82,44 +101,41 @@ class TrelloClient:
         :return: a list of Trello label objects
         :rtype: list
         """
-        return self.get_trello_board(board_name).get_labels()
+        return self._board.get_labels()
 
-    def get_trello_board_label(self, board_name, board_labels, label_name):
+    def get_board_label(self, label_name):
         """
         Get a Trello board label from label name, if it does not exist create it
 
-        :param board_name: the board name
-        :param board_labels: list of Trello board labels objects
         :param label_name: the label name
         :return: a Tello label
         :rtype: Trello label object
         """
-        for board_label in board_labels:
+        if self._board_labels == None:
+            raise ClientError('get_board_label')
+        for board_label in self._board_labels:
             if board_label.name == label_name:
                 logger.debug('Trello board label {} found'.format(label_name))
                 return board_label
         logger.debug('Creating Trello board label {}'.format(label_name))
-        board_label = self.get_trello_board(board_name).add_label(label_name, 'black')
-        board_labels.append(board_label) # Update board_labels with new label
+        board_label = self._board.add_label(label_name, 'black')
+        self._board_labels.append(board_label) # Update _board_labels with new label
         return board_label
 
-    def get_trello_cards_dict(self, trello_lists, lists_filter=None, only_my_cards=False):
+    def get_cards_dict(self):
         """
         Get all cards of a list of Trello lists in a dictionary
 
-        :param trello_lists: list of Trello lists
-        :param lists_filter: Trello list names list to do not sync
-        :param only_my_cards: if True get only the cards assigned to me
         :return: a dict with Cards
         :rtype: dict
         """
         trello_cards_dict = {}
-        if lists_filter is not None:
-            trello_lists = filter(lambda trello_list: trello_list.name not in lists_filter, trello_lists)
+        if self._lists_filter is not None:
+            trello_lists = filter(lambda trello_list: trello_list.name not in self._lists_filter, self._lists)
         for trello_list in trello_lists:
             logger.debug('Getting Trello cards of list {}'.format(trello_list.name))
             trello_cards_dict[trello_list.name] = trello_list.list_cards()
-            if only_my_cards:
+            if self._only_my_cards:
                 trello_cards_dict[trello_list.name] = filter(lambda trello_card: self.whoami in trello_card.member_ids, trello_cards_dict[trello_list.name])
         return trello_cards_dict
 
