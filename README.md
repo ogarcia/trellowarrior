@@ -49,7 +49,8 @@ Linux repository](https://repo.connectical.com/).
 
 ##### The easy way
 
-Simply create a Python 3 virtualenv and install via pip:
+Simply create a Python 3 virtualenv and install [via
+pip](https://github.com/ogarcia/trellowarrior):
 
 ```
 virtualenv trw
