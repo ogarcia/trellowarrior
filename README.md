@@ -68,8 +68,15 @@ Python helpers to comunicate with Taskwarrior and Trello.
 You can use your package system to install it, but the best way is to use
 a Python 3 virtualenv:
 
+To ensure that this is a python3 env, first locate your python3 binary:
+```sh 
+$ which python3
+/usr/bin/python3
+```
+then use that binary to ensure that the correct version of python is used (if your result is different to the above, change it in this code):
+
 ```sh
-virtualenv trw
+virtualenv -p /usr/bin/python3 trw
 . trw/bin/activate
 pip install tasklib
 pip install py-trello
