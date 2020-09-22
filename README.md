@@ -53,7 +53,7 @@ Simply create a Python 3 virtualenv and install [via
 pip](https://github.com/ogarcia/trellowarrior):
 
 ```
-virtualenv trw
+virtualenv -p python3 trw
 . trw/bin/activate
 pip install trellowarrior
 ```
@@ -69,7 +69,7 @@ You can use your package system to install it, but the best way is to use
 a Python 3 virtualenv:
 
 ```sh
-virtualenv trw
+virtualenv -p python3 trw
 . trw/bin/activate
 pip install tasklib
 pip install py-trello
