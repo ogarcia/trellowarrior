@@ -139,7 +139,7 @@ class TrelloClient:
                 trello_cards_dict[trello_list.name] = filter(lambda trello_card: self.whoami in trello_card.member_ids, trello_cards_dict[trello_list.name])
         return trello_cards_dict
 
-    def delete_trello_card(self, trello_card_id):
+    def delete_card(self, trello_card_id):
         """
         Delete (forever) a Trello card by ID
 
