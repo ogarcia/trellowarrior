@@ -49,7 +49,12 @@ class Config:
         if self.config_file == None:
             # No config file exists, use XDG_CONFIG location
             self.config_file = os.path.join(config_home, 'trellowarrior/trellowarrior.conf')
-            logger.debug('Using {} as config file'.format(self.config_file))
+            config_directory = os.path.join(config_home, 'trellowarrior')
+            # Create config directory if not exists
+            if not os.path.exists(config_directory):
+                logger.debug('Creating config directory {}'.format(config_directory))
+                os.makedirs(config_directory, exist_ok=True)
+            logger.debug('No config file exists, using {} as config file'.format(self.config_file))
         elif kwargs.get('parse_config_file', True):
             logger.debug('Using {} as config file'.format(self.config_file))
             # Parse the config
