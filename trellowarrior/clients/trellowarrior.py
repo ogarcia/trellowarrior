@@ -226,7 +226,7 @@ class TrelloWarriorClient:
             if taskwarrior_task['modified'] > trello_card.date_last_activity:
                 # Taskwarrior data is newer
                 for member_id in trello_card.member_ids:
-                    if task_member_ids and member_id not in task_member_ids:
+                    if member_id not in task_member_ids:
                         trello_card.unassign(member_id)
                 for member_id in task_member_ids:
                     if member_id not in trello_card.member_ids:
