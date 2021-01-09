@@ -20,6 +20,8 @@ uda.trelloid.type=string
 uda.trelloid.label=Trello ID
 uda.trellolistname.type=string
 uda.trellolistname.label=Trello List Name
+uda.trellomembers.type=string
+uda.trellomembers.label=Trello Members
 ```
 
 The first UDA `trelloid` is used to store the Trello Card ID and establish
@@ -29,6 +31,9 @@ never, never, never, never, (period), should edit this field.
 The second UDA `trellolistname` is used to determine the Trello List where
 the Card/Task is stored. You can edit this field without problems to move
 the task to another list.
+
+The third UDA, `trellomembers`, is used to store the usernames of Trello users
+who are members of the linked card.
 
 ### For TrelloWarrior
 
@@ -173,6 +178,10 @@ that define the Taskwarrior project and Trello board equivalence.
 
 * `sync_projects` MANDATORY. Define what sections are loaded, separated by spaces.
 
+* `trello_member_id_map` OPTIONAL. A string mapping Trello member IDs to
+  usernames. This will be automatically populated as needed, but names can be
+  modified if desired
+
 ### Project/Board Sections
 
 The Project/Board sections are called from `sync_projects` and define the
@@ -192,6 +201,7 @@ equivalence between Taskwarrior and Trello.
 |---------------------|---------------|
 | UDA: trelloid       | Card ID       |
 | UDA: trellolistname | List Name     |
+| UDA: trellomembers  | Members       |
 | Project             | Board Name    |
 | Description         | Card Name     |
 | Due                 | Card Due Date |
