@@ -54,6 +54,12 @@ class TrelloWarriorClient:
         if trello_card.labels:
             for label in trello_card.labels:
                 new_taskwarrior_task['tags'].add(label.name)
+        if trello_card.member_ids:
+            new_taskwarrior_task['trellomembers'] = ",".join([
+                member.username
+                for member in self.trello_client.get_card_members(trello_card)
+            ])
+
         new_taskwarrior_task['trelloid'] = trello_card.id
         new_taskwarrior_task['trellolistname'] = list_name
         new_taskwarrior_task.save()
