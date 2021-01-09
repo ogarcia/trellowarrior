@@ -148,12 +148,6 @@ class TrelloClient:
             if self._only_my_cards:
                 trello_cards_dict[trello_list.name] = filter(lambda trello_card: self.whoami in trello_card.member_ids, trello_cards_dict[trello_list.name])
 
-        # raise Exception(
-        #     [
-        #         Member(self.trello_client, mid).fetch().username
-        #                for mid in list(trello_cards_dict["Planned"])[0].member_ids
-        #     ]
-        # )
         return trello_cards_dict
 
     def delete_card(self, trello_card_id):

@@ -86,7 +86,7 @@ class Config:
                 raise MandatoryExit('trello_token_secret')
 
             try:
-                self.trello_member_id_map = config_parser.get('DEFAULT', 'trello_member_id_map', fallback=None)
+                self.trello_member_id_map = config_parser.get('DEFAULT', 'trello_member_id_map', fallback=None).strip()
             except ValueError:
                 self.trello_member_id_map = ""
 

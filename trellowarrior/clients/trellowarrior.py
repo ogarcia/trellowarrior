@@ -10,8 +10,8 @@ from trellowarrior.clients.taskwarrior import TaskwarriorClient
 from trellowarrior.clients.trello import TrelloClient
 from trellowarrior.config import config
 from trellowarrior.configeditor import config_editor
-
 import logging
+
 from configparser import NoOptionError
 
 logger = logging.getLogger(__name__)
@@ -30,28 +30,42 @@ class TrelloWarriorClient:
         :param taskwarrior_task: Taskwarrior task object
         :param trello_list: Trello list object
         """
+
+        if taskwarrior_task['trellomembers']:
+            # Get card members trellomembers UDA
+            try:
+                member_ids = [
+                    self.trello_username_to_member_id(username)
+                    for username in taskwarrior_task['trellomembers'].strip().split()
+                ]
+            except StopIteration:
+                raise ValueError(
+                    "Trello username map {} is missing one or more entries from {}".format(
+                        self.trello_member_id_map, taskwarrior_task['trellomembers'])
+                )
+        elif project.only_my_cards:
+            # If project is configured for only my cards, set members to self
+            member_ids = [self.trello_client.whoami]
+        else:
+            member_ids = []
+
         new_trello_card = trello_list.add_card(taskwarrior_task['description'])
+
         if taskwarrior_task['due']:
             new_trello_card.set_due(taskwarrior_task['due'])
         for tag in taskwarrior_task['tags']:
             trello_label = self.trello_client.get_board_label(tag)
             new_trello_card.add_label(trello_label)
-        if taskwarrior_task['trellomembernames']:
-            try:
-                member_ids = [
-                    self.trello_username_to_member_id(username)
-                    for username in taskwarrior_task['trellomembernames'].split()
-                ]
-            except StopIteration:
-                raise ValueError(
-                    "Trello username map {} is missing one or more entries from {}".format(
-                        self.trello_member_id_map, taskwarrior_task['trellomembernames'])
-                )
-            for member_id in member_ids:
-                new_trello_card.assign(member_id)
-        elif project.only_my_cards:
-            new_trello_card.assign(self.trello_client.whoami)
+        for member_id in member_ids:
+            new_trello_card.assign(member_id)
+
         taskwarrior_task['trelloid'] = new_trello_card.id
+        taskwarrior_task['trellomemberids'] = ",".join(member_ids)
+        if not taskwarrior_task['trellomembers']:
+            taskwarrior_task['trellomembers'] = ",".join([
+                self.trello_member_id_to_username(member_id)
+                for member_id in member_ids
+            ])
         taskwarrior_task.save()
 
     def fetch_trello_card(self, project, list_name, trello_card):
@@ -71,8 +85,8 @@ class TrelloWarriorClient:
             for label in trello_card.labels:
                 new_taskwarrior_task['tags'].add(label.name)
         if trello_card.member_ids:
-            new_taskwarrior_task['trellomembers'] = ",".join(trello_card.member_ids)
-            new_taskwarrior_task['trellomembernames'] = ",".join([
+            new_taskwarrior_task['trellomemberids'] = ",".join(trello_card.member_ids)
+            new_taskwarrior_task['trellomembers'] = ",".join([
                 self.trello_member_id_to_username(member_id)
                 for member_id in  trello_card.member_ids
             ])
@@ -199,7 +213,13 @@ class TrelloWarriorClient:
 
 
         trello_member_ids = set(getattr(trello_card, "member_ids", []))
-        task_member_ids = set( (taskwarrior_task['trellomembers'] or "").split(",") or [])
+
+        task_member_ids = set([
+            self.trello_username_to_member_id(username.strip())
+            for username in
+            (taskwarrior_task['trellomembers'] or "").strip().split(",") or []
+            if len(username)
+        ])
 
         if trello_member_ids != task_member_ids:
             taskwarrior_task_modified = True
@@ -214,14 +234,14 @@ class TrelloWarriorClient:
                 logger.info('Task {} assigned to {} in Trello'.format(taskwarrior_task['id'], task_member_ids))
             else:
                 # Trello data is newer
-                taskwarrior_task['trellomembers'] = ",".join(trello_card.member_ids)
+                taskwarrior_task['trellomemberids'] = ",".join(trello_card.member_ids)
                 taskwarrior_task_modified = True
                 logger.info('Task {} assigned to {} in Taskwarrior'.format(taskwarrior_task['id'], trello_card.member_ids))
 
-            taskwarrior_task['trellomembernames'] = [
+            taskwarrior_task['trellomembers'] = ",".join([
                 self.trello_member_id_to_username(member_id)
                 for member_id in trello_card.member_ids
-            ]
+            ])
 
         # Save Taskwarrior changes (if any)
         if taskwarrior_task_modified:
@@ -309,7 +329,7 @@ class TrelloWarriorClient:
         if self._trello_member_id_map is None:
             try:
                 self._trello_member_id_map = config.str_to_dict(
-                    config.trello_member_id_map or ""
+                    (config.trello_member_id_map or "").strip()
                 )
             except NoOptionError:
                 self._trello_member_id_map = {}
@@ -330,5 +350,9 @@ class TrelloWarriorClient:
         return self._trello_member_id_map[member_id]
 
     def trello_username_to_member_id(self, username):
-        return next( k for k, v in self.trello_member_id_map.items()
-                     if v == username)
+        if not username: raise Exception
+        try:
+            return next( k for k, v in self.trello_member_id_map.items()
+                         if v == username)
+        except StopIteration:
+            return self.trello_client.get_member(username).id
