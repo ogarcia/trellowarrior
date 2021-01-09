@@ -7,7 +7,7 @@
 # Distributed under terms of the GNU GPLv3 license.
 
 from trellowarrior.exceptions import ClientError
-from trello import TrelloClient as Client
+from trello import TrelloClient as Client, Member
 from trello.exceptions import ResourceUnavailable
 
 import logging
@@ -122,6 +122,20 @@ class TrelloClient:
         self._board_labels.append(board_label) # Update _board_labels with new label
         return board_label
 
+    def get_card_members(self, card):
+        """
+        Get a list of members for a Trelllo card
+
+        :param card: a Trello API `Card` object
+        :return: a list of Trello API `Member` objects
+        :rtype: list
+        """
+
+        return [
+            Member(self.trello_client, mid).fetch()
+            for mid in card.member_ids
+        ]
+
     def get_cards_dict(self):
         """
         Get all cards of a list of Trello lists in a dictionary
@@ -137,6 +151,13 @@ class TrelloClient:
             trello_cards_dict[trello_list.name] = trello_list.list_cards()
             if self._only_my_cards:
                 trello_cards_dict[trello_list.name] = filter(lambda trello_card: self.whoami in trello_card.member_ids, trello_cards_dict[trello_list.name])
+
+        # raise Exception(
+        #     [
+        #         Member(self.trello_client, mid).fetch().username
+        #                for mid in list(trello_cards_dict["Planned"])[0].member_ids
+        #     ]
+        # )
         return trello_cards_dict
 
     def delete_card(self, trello_card_id):
