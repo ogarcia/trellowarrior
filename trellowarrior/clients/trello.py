@@ -122,19 +122,15 @@ class TrelloClient:
         self._board_labels.append(board_label) # Update _board_labels with new label
         return board_label
 
-    def get_card_members(self, card):
+    def get_member(self, member_id):
         """
-        Get a list of members for a Trelllo card
+        Get a Trello member by ID
 
-        :param card: a Trello API `Card` object
-        :return: a list of Trello API `Member` objects
-        :rtype: list
+        :param member_id: the member's ID
+        :return: a Trello API `Member` object
+        :rtype: `Member`
         """
-
-        return [
-            Member(self.trello_client, mid).fetch()
-            for mid in card.member_ids
-        ]
+        return Member(self.trello_client, member_id).fetch()
 
     def get_cards_dict(self):
         """
