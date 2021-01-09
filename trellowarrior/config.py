@@ -32,6 +32,7 @@ class Config:
         self.trello_token = None
         self.trello_token_secret = None
         self.sync_projects = []
+        self.trello_member_id_map = None
 
     def configure(self, **kwargs):
         # Get config file location
@@ -84,6 +85,11 @@ class Config:
             except NoOptionError:
                 raise MandatoryExit('trello_token_secret')
 
+            try:
+                self.trello_member_id_map = config_parser.get('DEFAULT', 'trello_member_id_map', fallback=None)
+            except ValueError:
+                self.trello_member_id_map = ""
+
             # Get the projects to sync
             projects = kwargs.get('projects') if kwargs.get('projects', []) != [] else config_parser.get('DEFAULT', 'sync_projects', fallback='').split()
             for project in projects:
@@ -117,6 +123,7 @@ class Config:
                         except ValueError:
                             only_my_cards = False
                             logger.warning('Option \'only_my_cards\' is misconfigured in project \'{}\', ignoring it'.format(project))
+
                         self.sync_projects.append(TrelloWarriorProject(project,
                             taskwarrior_project_name,
                             config_parser.get(project, 'trello_board_name'),
@@ -124,7 +131,8 @@ class Config:
                             trello_doing_list = doing_list,
                             trello_done_list = done_list,
                             trello_lists_filter = lists_filter,
-                            only_my_cards = only_my_cards))
+                            only_my_cards = only_my_cards
+                        ))
                 else:
                     logger.warning('Missing config section for sync project \'{}\', ignoring it'.format(sync_project))
             if self.sync_projects == []:
@@ -134,6 +142,22 @@ class Config:
         for key, value in kwargs.items():
             if hasattr(self, key) and key != 'config_file':
                 setattr(self, key, value)
+
+    def dict_to_str(self, obj):
+        return ",".join(
+            "{}={}".format(k, v)
+            for k, v in obj.items()
+        )
+
+    def str_to_dict(self, obj):
+        try:
+            return dict(
+                item.split("=")
+                for item in
+                obj.split(",")
+            )
+        except ValueError:
+            return {}
 
     def __str__(self):
         return str(self.__dict__)
