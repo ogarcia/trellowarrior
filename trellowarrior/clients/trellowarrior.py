@@ -16,7 +16,12 @@ logger = logging.getLogger(__name__)
 
 class TrelloWarriorClient:
     def __init__(self, config):
-        self.taskwarrior_client = TaskwarriorClient(config.taskwarrior_taskrc_location, config.taskwarrior_data_location)
+        self.taskwarrior_client =
+        TaskwarriorClient(
+            config.taskwarrior_taskrc_location,
+            config.taskwarrior_data_location,
+            config.task_command
+        )
         self.trello_client = TrelloClient(config.trello_api_key, config.trello_api_secret, config.trello_token, config.trello_token_secret)
 
     def upload_taskwarrior_task(self, project, taskwarrior_task, trello_list):

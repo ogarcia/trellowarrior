@@ -27,6 +27,7 @@ class Config:
         self.config_file = None
         self.taskwarrior_taskrc_location = None
         self.taskwarrior_data_location = None
+        self.taskwarrior_task_command = None
         self.trello_api_key = None
         self.trello_api_secret = None
         self.trello_token = None
@@ -64,6 +65,7 @@ class Config:
             # Get the TaskWarrior info from config
             self.taskwarrior_taskrc_location = config_parser.get('DEFAULT', 'taskwarrior_taskrc_location', fallback='~/.taskrc')
             self.taskwarrior_data_location = config_parser.get('DEFAULT', 'taskwarrior_data_location', fallback='~/.task')
+            self.taskwarrior_task_command = config_parser.get('DEFAULT', 'taskwarrior_task_command', fallback='task')
 
             # Get the auth info from config
             MandatoryExit = lambda option: SystemExit('Missing mandatory entry \'{}\' in config file'.format(option))

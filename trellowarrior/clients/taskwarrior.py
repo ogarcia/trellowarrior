@@ -12,7 +12,11 @@ from tasklib.task import Task
 
 class TaskwarriorClient:
     def __init__(self, taskrc_location, data_location):
-        self.taskwarrior_client = Client(taskrc_location=taskrc_location, data_location=data_location)
+        self.taskwarrior_client = Client(
+            taskrc_location=taskrc_location,
+            data_location=data_location,
+            task_command=task_command
+        )
         self._project = None
 
     def project(self, project):
