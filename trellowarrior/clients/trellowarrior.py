@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 class TrelloWarriorClient:
     def __init__(self, config):
-        self.taskwarrior_client =
-        TaskwarriorClient(
+        self.taskwarrior_client = TaskwarriorClient(
             config.taskwarrior_taskrc_location,
             config.taskwarrior_data_location,
             config.task_command
