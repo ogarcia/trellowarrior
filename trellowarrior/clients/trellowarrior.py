@@ -35,6 +35,8 @@ class TrelloWarriorClient:
             new_trello_card.add_label(trello_label)
         if project.only_my_cards:
             new_trello_card.assign(self.trello_client.whoami)
+        annotations = [annotation['description'] for annotation in taskwarrior_task['annotations']]
+        new_trello_card.set_description('\n'.join(annotations))
         taskwarrior_task['trelloid'] = new_trello_card.id
         taskwarrior_task.save()
 
@@ -57,6 +59,7 @@ class TrelloWarriorClient:
         new_taskwarrior_task['trelloid'] = trello_card.id
         new_taskwarrior_task['trellolistname'] = list_name
         new_taskwarrior_task.save()
+        new_taskwarrior_task.add_annotation(trello_card.description)
         logger.info('Trello card with ID {} saved as new task in Taskwarrior with ID {}'.format(trello_card.id, new_taskwarrior_task['id']))
         if list_name == project.trello_doing_list:
             new_taskwarrior_task.start()
@@ -85,6 +88,25 @@ class TrelloWarriorClient:
                 taskwarrior_task['description'] = trello_card.name
                 taskwarrior_task_modified = True
             logger.info('Name of task {} synchronized'.format(taskwarrior_task['id']))
+        # Task annotation <> Trello description
+        if taskwarrior_task['annotations'] or trello_card.description:
+            annotations_str = ''
+            if len(taskwarrior_task['annotations']):
+                annotations = [annotation['description'] for annotation in taskwarrior_task['annotations']]
+                annotations_str = '\n'.join(annotations)
+            elif taskwarrior_task['annotation']:
+                annotations_str = taskwarrior_task['annotations'][0]
+            if annotations_str != trello_card.description:
+                if taskwarrior_task['modified'] > trello_card.date_last_activity:
+                    # Taskwarrior data is newer
+                    trello_card.set_description(annotations_str)
+                else:
+                    # Trello data is newer, overwrite annotations
+                    for annotation in taskwarrior_task['annotations']:
+                        taskwarrior_task.remove_annotation(annotation)
+                    taskwarrior_task.add_annotation(trello_card.description)
+                    taskwarrior_task_modified = True
+                logger.info('Description of task {} synchronized'.format(taskwarrior_task['id']))
         # Task due <> Trello due
         if taskwarrior_task['due']:
             if not trello_card.due_date or taskwarrior_task['modified'] > trello_card.date_last_activity:
