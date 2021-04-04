@@ -6,7 +6,7 @@
 # Distributed under terms of the GNU GPLv3 license.
 
 NAME = 'trellowarrior'
-VERSION = '1.3.0'
+VERSION = '1.3.1'
 AUTHOR_NAME = 'Óscar García Amor'
 AUTHOR_EMAIL = 'ogarcia@connectical.com'
 DESCRIPTION = 'Tool to sync Taskwarrior projects with Trello boards'
