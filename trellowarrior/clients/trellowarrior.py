@@ -211,8 +211,9 @@ class TrelloWarriorClient:
             else:
                 # Trello data is newer (delete old description and add new one)
                 if taskwarrior_task_annotation_trello_description[0] is not None:
-                    taskwarrior_task_annotation_trello_description.remove()
-                taskwarrior_task.add_annotation('[Trello Description] {}'.format(trello_card.description))
+                    taskwarrior_task_annotation_trello_description[0].remove()
+                if trello_card.description != '':
+                    taskwarrior_task.add_annotation('[Trello Description] {}'.format(trello_card.description))
             logger.info('Description of task {} synchronized'.format(taskwarrior_task['id']))
 
     def sync_project(self, project):
