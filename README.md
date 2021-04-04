@@ -188,14 +188,16 @@ equivalence between Taskwarrior and Trello.
 
 ## Equivalences
 
-| Taskwarrior         | Trello        |
-|---------------------|---------------|
-| UDA: trelloid       | Card ID       |
-| UDA: trellolistname | List Name     |
-| Project             | Board Name    |
-| Description         | Card Name     |
-| Due                 | Card Due Date |
-| Tags                | Card Labels   |
+| Taskwarrior                      | Trello           |
+|----------------------------------|------------------|
+| UDA: trelloid                    | Card ID          |
+| UDA: trellolistname              | List Name        |
+| Project                          | Board Name       |
+| Description                      | Card Name        |
+| Due                              | Card Due Date    |
+| Tags                             | Card Labels      |
+| Annotation: [Trello URL]         | Card URL         |
+| Annotation: [Trello Description] | Card Description |
 
 ## Known limitations
 
@@ -221,7 +223,11 @@ removed name. You can rename labels without problems.
 
 New labels are created by TrelloWarrior in black color.
 
-For now, only syncs *Title/Description*, *Due dates*, *Labels* and *Status*.
+If you modify *Card URL* or *Card Description* in Trello, the old annotation
+will be deleted and replaced by a new one.
+
+For now, only syncs *Title/Description*, *Due dates*, *Labels*, *Card URL*,
+*Card Description* and *Status*.
 
 ## Contributing
 
