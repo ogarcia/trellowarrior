@@ -50,12 +50,12 @@ Linux repository](https://repo.connectical.com/).
 ##### The easy way
 
 Simply create a Python 3 virtualenv and install [via
-pip](https://github.com/ogarcia/trellowarrior):
+pip](https://pypi.org/project/trellowarrior/):
 
 ```
-virtualenv -p python3 trw
+python3 -m venv trw
 . trw/bin/activate
-pip install trellowarrior
+python3 -m pip install trellowarrior
 ```
 
 ##### By hand
@@ -69,10 +69,10 @@ You can use your package system to install it, but the best way is to use
 a Python 3 virtualenv:
 
 ```sh
-virtualenv -p python3 trw
+python3 -m venv trw
 . trw/bin/activate
-pip install tasklib
-pip install py-trello
+python3 -m pip install tasklib
+python3 -m pip install py-trello
 ```
 
 #### Get the keys
