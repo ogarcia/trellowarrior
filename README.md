@@ -226,6 +226,9 @@ New labels are created by TrelloWarrior in black color.
 If you modify *Card URL* or *Card Description* in Trello, the old annotation
 will be deleted and replaced by a new one.
 
+If you want to delete a *due date* you must do it in both Taskwarrior and
+Trello.
+
 For now, only syncs *Title/Description*, *Due dates*, *Labels*, *Card URL*,
 *Card Description* and *Status*.
 
