@@ -126,7 +126,7 @@ class Config:
                             trello_lists_filter = lists_filter,
                             only_my_cards = only_my_cards))
                 else:
-                    logger.warning('Missing config section for sync project \'{}\', ignoring it'.format(sync_project))
+                    logger.warning('Missing config section for sync project \'{}\', ignoring it'.format(project))
             if self.sync_projects == []:
                 raise SystemExit('No projects to sync')
 
